@@ -1,0 +1,21 @@
+.shell {
+  display: grid;
+  grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.content {
+  flex: 1;
+  padding: 1.15rem 1.25rem 1.5rem;
+}
+
+.inner {
+  width: 100%;
+  max-width: none;
+}

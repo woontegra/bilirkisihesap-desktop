@@ -1,0 +1,62 @@
+# dependencies
+node_modules/
+
+# build outputs (icon sources under build/ stay tracked)
+dist/
+dist-electron/
+out/
+release/
+.vite/
+.cache/
+coverage/
+*.tsbuildinfo
+
+# installers and updater metadata
+*.exe
+*.msi
+*.dmg
+*.pkg
+*.AppImage
+*.blockmap
+latest.yml
+latest-mac.yml
+latest-linux.yml
+builder-debug.yml
+builder-effective-config.yaml
+
+# logs, cache, temp, local smoke
+*.log
+tmp/
+temp/
+.smoke-result.txt
+.evds-smoke-result.txt
+.evds-smoke-boot.txt
+.evds-smoke-ready.txt
+playwright-report/
+test-results/
+
+# secrets and credentials
+.env
+.env.*
+!.env.example
+*.pfx
+*.p12
+*.pem
+*.key
+*.cer
+*.crt
+*.p8
+*.mobileprovision
+AuthKey_*
+
+# local databases
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# OS
+.DS_Store
+Thumbs.db

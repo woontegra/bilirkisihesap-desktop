@@ -1,0 +1,53 @@
+:root {
+  color-scheme: light;
+  --page: #eef1f6;
+  --page-accent: #e4e9f1;
+  --surface: #ffffff;
+  --surface-muted: #f6f8fb;
+  --ink: #0e1726;
+  --text: #2c3648;
+  --text-strong: #0e1726;
+  --muted: #6b7689;
+  --border: #d5dce8;
+  --border-subtle: #e6ebf3;
+  --accent: #1a6f7c;
+  --accent-hover: #155a65;
+  --accent-soft: #e5f3f5;
+  --success: #2a6b52;
+  --success-soft: #e8f5ef;
+  --warning: #9a6b2a;
+  --warning-soft: #f8f0e4;
+  --danger: #9b3d3d;
+  --danger-soft: #f8eaea;
+  --info: #2f5f8a;
+  --info-soft: #e8f0f7;
+  --sidebar-width: 16.5rem;
+  --topbar-height: 3.5rem;
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --shadow-sm: 0 1px 2px rgba(14, 23, 38, 0.04);
+  --shadow-md: 0 4px 16px rgba(14, 23, 38, 0.06);
+  --font-sans: "Outfit", system-ui, sans-serif;
+  --fs-xs: 0.75rem;
+  --fs-sm: 0.8125rem;
+  --fs-base: 0.875rem;
+  --fs-md: 1rem;
+  --fs-lg: 1.25rem;
+  --z-sidebar: 25;
+  --z-topbar: 30;
+
+  /* Modül stillerinde kullanılan eşadlı tokenlar */
+  --z-sidebar: 25;
+  --z-topbar: 30;
+  --sidebar-width: 16.5rem;
+  --topbar-height: 3.5rem;
+  --border-subtle: #e6ebf3;
+  --text-strong: #0e1726;
+  --accent-soft: #e5f3f5;
+  --accent-hover: #155a65;
+  --warning-soft: #f8f0e4;
+  --surface: #ffffff;
+  --surface-muted: #f6f8fb;
+  --font-sans: "Outfit", system-ui, sans-serif;
+  --fs-sm: 0.8125rem;
+}

@@ -1,0 +1,135 @@
+.sidebar {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sidebar);
+  display: flex;
+  flex-direction: column;
+  width: var(--sidebar-width);
+  height: 100vh;
+  color: var(--text);
+  background:
+    radial-gradient(ellipse 120% 70% at 0% 0%, color-mix(in srgb, var(--accent-soft) 70%, white), transparent 58%),
+    linear-gradient(180deg, #ffffff 0%, #f7fbfc 100%);
+  border-right: 1px solid var(--border-subtle);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-height: var(--topbar-height);
+  padding: 0 0.9rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.mark {
+  width: 2.15rem;
+  height: 2.15rem;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.brandText {
+  min-width: 0;
+}
+
+.brandName {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text-strong);
+  letter-spacing: -0.02em;
+}
+
+.brandHint {
+  font-size: 0.68rem;
+  color: var(--muted);
+}
+
+.nav {
+  flex: 1;
+  overflow: auto;
+  padding: 0.65rem 0.55rem 0.9rem;
+}
+
+.group + .group {
+  margin-top: 0.7rem;
+}
+
+.groupLabel {
+  padding: 0.15rem 0.55rem 0.3rem;
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.link {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: 2.15rem;
+  padding: 0 0.6rem;
+  border-radius: 0.55rem;
+  color: var(--text);
+  font-size: var(--fs-sm);
+  font-weight: 550;
+}
+
+.link:hover {
+  background: var(--accent-soft);
+  color: var(--accent-hover);
+}
+
+.action {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+
+.linkActive,
+.linkActive {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 650;
+}
+
+.linkLabel {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.badge {
+  flex-shrink: 0;
+  padding: 0.05rem 0.3rem;
+  border-radius: 999px;
+  font-size: 0.5rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  background: color-mix(in srgb, var(--accent-soft) 80%, white);
+  color: var(--accent-hover);
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
+}
+
+.footer {
+  padding: 0.7rem 0.8rem 0.85rem;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.mockBadge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.45rem;
+  padding: 0 0.45rem;
+  border-radius: 999px;
+  background: var(--warning-soft);
+  color: var(--warning);
+  font-size: 0.68rem;
+  font-weight: 700;
+}

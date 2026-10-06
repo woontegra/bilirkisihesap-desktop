@@ -1,0 +1,130 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+  background: color-mix(in srgb, #0f172a 42%, transparent);
+}
+
+.modal {
+  width: min(28rem, 100%);
+  display: grid;
+  gap: 0.85rem;
+  padding: 1.15rem 1.2rem 1rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-md, 0 18px 48px rgba(15, 23, 42, 0.18));
+}
+
+.title {
+  margin: 0;
+  color: var(--text-strong);
+  font-size: var(--fs-md, 1.05rem);
+  letter-spacing: -0.02em;
+}
+
+.text,
+.version {
+  margin: 0;
+  color: var(--text);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.newVersion {
+  color: var(--accent, #1a6f7c);
+}
+
+.error {
+  margin: 0;
+  color: var(--danger, #9b3d3d);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.notes {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.notes h3 {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.notes ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: var(--text);
+  font-size: 0.86rem;
+}
+
+.progress {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.progressHead,
+.progressMeta {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.progressBar {
+  height: 0.45rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--surface-muted);
+}
+
+.progressFill {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent, #1a6f7c);
+  transition: width 160ms ease;
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.primary,
+.ghost {
+  min-height: 2.1rem;
+  padding: 0 0.9rem;
+  border-radius: var(--radius-sm);
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.primary {
+  border: 1px solid color-mix(in srgb, var(--accent, #1a6f7c) 55%, var(--border));
+  background: var(--accent, #1a6f7c);
+  color: #fff;
+}
+
+.ghost {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-strong);
+}
+
+.primary:disabled,
+.ghost:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
