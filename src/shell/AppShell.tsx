@@ -94,6 +94,11 @@ export function AppShell() {
 
   return (
     <div className={styles.shell}>
+      {runtime?.license.isOfflineGrace ? (
+        <div className={styles.offlineBanner} role="status">
+          {runtime.license.message}
+        </div>
+      ) : null}
       <Sidebar mockLicense={runtime?.license.isMock ?? false} />
       <div className={styles.main}>
         <Topbar title={title} version={topMeta.version} osLabel={topMeta.os} />

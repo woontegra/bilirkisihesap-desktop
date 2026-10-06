@@ -1,3 +1,4 @@
+import "./license/installLocalWriteGuard";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { ToastProvider } from "./context/ToastContext";

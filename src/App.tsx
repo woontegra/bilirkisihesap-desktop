@@ -1,6 +1,7 @@
 import { HashRouter, Navigate, Route, Routes } from "react-router-dom";
 import { CalculationToolsProvider } from "./context/CalculationToolsContext";
 import { UpdateStatusProvider } from "./update/UpdateStatusContext";
+import { LicenseGate } from "./license/LicenseGate";
 import { AppShell } from "./shell/AppShell";
 import { HomePage } from "./pages/HomePage";
 import { LicensePage } from "./pages/LicensePage";
@@ -74,6 +75,7 @@ export function App() {
       <UpdateStatusProvider>
         <CalculationToolsProvider>
           <Routes>
+            <Route element={<LicenseGate />}>
             <Route element={<AppShell />}>
               <Route index element={<HomePage />} />
               <Route path="davaci-ucreti" element={<DavaciUcretiPage />} />
@@ -146,6 +148,7 @@ export function App() {
               <Route path="ayarlar" element={<SettingsPage />} />
               <Route path="lisans" element={<LicensePage />} />
               <Route path="*" element={<Navigate to="/" replace />} />
+            </Route>
             </Route>
           </Routes>
         </CalculationToolsProvider>

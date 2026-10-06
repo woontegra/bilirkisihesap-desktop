@@ -4,6 +4,14 @@
   min-height: 100vh;
 }
 
+.offlineBanner {
+  grid-column: 1 / -1;
+  padding: 0.65rem 1rem;
+  background: var(--warning-soft);
+  color: var(--text-strong);
+  border-bottom: 1px solid color-mix(in srgb, var(--warning) 28%, var(--border));
+}
+
 .main {
   display: flex;
   flex-direction: column;

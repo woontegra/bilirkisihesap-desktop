@@ -22,6 +22,7 @@ export default defineConfig({
       "electron/db/settingsRepository.test.ts",
       "shared/kidem/*.test.ts",
       "src/shell/*.test.ts",
+      "src/license/*.test.ts",
       "src/utils/caseNotesStore.test.ts",
       "src/utils/caseTagsStore.test.ts",
       "src/components/calculation-tools/pressDailyInterest.test.ts",

@@ -6,6 +6,7 @@ import {
   type LicenseState,
 } from "../../shared/desktop-contract";
 import { useDesktopRuntime } from "../desktop/useDesktopRuntime";
+import { presentTrialFailure, reducePaidActivation } from "../license/trialNotice";
 import styles from "./pages.module.css";
 
 const STATE_LABELS: Record<LicenseState, string> = {
@@ -52,9 +53,11 @@ export function LicensePage() {
   const [trialEmail, setTrialEmail] = useState("");
   const [busy, setBusy] = useState(false);
   const [formMessage, setFormMessage] = useState<string | null>(null);
+  const [trialFailure, setTrialFailure] = useState<string | null>(null);
 
   const current = license ?? runtime?.license ?? null;
   const needsActivation = Boolean(current && !current.isMock && current.state !== "active");
+  const trialNotice = trialFailure ? presentTrialFailure(trialFailure) : null;
 
   async function startTrial(): Promise<void> {
     const api = window.bilirkisiDesktop;
@@ -64,9 +67,10 @@ export function LicensePage() {
     try {
       const result = await api.startTrial({ email: trialEmail });
       if (!result.ok) {
-        setFormMessage(result.message);
+        setTrialFailure(presentTrialFailure(result.message).message);
         return;
       }
+      setTrialFailure(null);
       setLicense(result.data);
       setFormMessage(result.data.message);
       await runtime?.reload();
@@ -88,12 +92,12 @@ export function LicensePage() {
         activationPassword: password,
       });
       if (!result.ok) {
-        setFormMessage(result.message);
+        setFormMessage(reducePaidActivation(result).paidFormMessage);
         return;
       }
       setLicense(result.data);
       setPassword("");
-      setFormMessage(result.data.message);
+      setFormMessage(reducePaidActivation(result).paidFormMessage);
       await runtime?.reload();
     } finally {
       setBusy(false);
@@ -141,8 +145,14 @@ export function LicensePage() {
         </aside>
       ) : (
         <aside className={styles.banner}>
-          <strong>{current ? STATE_LABELS[current.state] : "Durum yükleniyor"}</strong>
-          <p>{current?.message}</p>
+          <strong>
+            {trialNotice
+              ? trialNotice.title
+              : current
+                ? STATE_LABELS[current.state]
+                : "Durum yükleniyor"}
+          </strong>
+          <p>{trialNotice ? trialNotice.message : current?.message}</p>
         </aside>
       )}
 
@@ -165,9 +175,15 @@ export function LicensePage() {
               Denemeyi bu cihazda başlat
             </button>
           </div>
-          <p className={styles.note}>
-            Deneme lisansı anahtar istemez. Süre lisans sunucusundaki bitiş tarihine göredir ve çevrimdışı uzamaz.
-          </p>
+          {trialNotice ? (
+            <p className={styles.error} role="alert">
+              {trialNotice.message}
+            </p>
+          ) : (
+            <p className={styles.note}>
+              Deneme lisansı anahtar istemez. Süre lisans sunucusundaki bitiş tarihine göredir ve çevrimdışı uzamaz.
+            </p>
+          )}
         </section>
         <section className={styles.panel}>
           <span>Satın alınmış lisansı etkinleştir</span>
