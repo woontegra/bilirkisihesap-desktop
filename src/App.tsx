@@ -75,8 +75,8 @@ export function App() {
       <UpdateStatusProvider>
         <CalculationToolsProvider>
           <Routes>
-            <Route element={<LicenseGate />}>
             <Route element={<AppShell />}>
+            <Route element={<LicenseGate />}>
               <Route index element={<HomePage />} />
               <Route path="davaci-ucreti" element={<DavaciUcretiPage />} />
               <Route path="araclar/manuel-brut-ucret" element={<ManualBrutWagePage />} />

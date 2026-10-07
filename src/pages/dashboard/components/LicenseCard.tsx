@@ -47,6 +47,10 @@ export function LicenseCard({ license }: Props) {
 
       <div className={styles.stats}>
         <div className={styles.stat}>
+          <p className={styles.metaLabel}>Yenileme</p>
+          <p className={styles.metaValue}>{formatDate(license.expiresAt)}</p>
+        </div>
+        <div className={styles.stat}>
           <p className={styles.metaLabel}>Kalan</p>
           <p className={`${styles.statValue} ${active ? styles.remainOk : styles.remainBad}`}>
             {license.remainingDays ?? "—"}

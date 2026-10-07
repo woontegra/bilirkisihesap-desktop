@@ -51,7 +51,7 @@ async function main() {
   console.log(`  sha512     : ${result.sha512}`);
   console.log(`  size       : ${result.size}`);
   console.log("");
-  console.log("Manuel R2 yükleme: woontegra-downloads/updates/bilirkisi-hesap/windows/");
+  console.log("Manuel R2 yükleme: woontegra-downloads/updates/bilirkisi-hesap-desktop/windows/");
 }
 
 main().catch((e) => {

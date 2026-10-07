@@ -48,32 +48,29 @@ export function LicenseGate() {
     return () => window.removeEventListener("focus", onFocus);
   }, [reload]);
 
+  const accountScreen =
+    location.pathname === "/ayarlar" || location.pathname === "/lisans";
+
   if (!runtime) {
     return (
-      <div className={styles.lock}>
-        <div className={styles.card}>
-          <p>{error ?? "Lisans durumu kontrol ediliyor…"}</p>
-          {error ? (
-            <button type="button" className={styles.retry} onClick={() => void reload()}>
-              Yeniden dene
-            </button>
-          ) : null}
-        </div>
+      <div className={styles.status}>
+        <p>{error ?? "Lisans durumu kontrol ediliyor…"}</p>
+        {error ? (
+          <button type="button" className={styles.retry} onClick={() => void reload()}>
+            Yeniden dene
+          </button>
+        ) : null}
       </div>
     );
   }
 
-  if (!canEnterLicensedApp(runtime.license)) {
+  if (!canEnterLicensedApp(runtime.license) && !accountScreen) {
     return (
       <LicenseRuntimeContext.Provider value={runtime}>
-        <div className={styles.lock}>
-          <div className={styles.panel}>
-            <p className={styles.lead}>
-              Geçerli lisans veya deneme olmadan hesaplama ekranları, kayıtlı hesaplar ve diğer uygulama bölümleri açılmaz.
-            </p>
-            <LicensePage />
-          </div>
-        </div>
+        <p className={styles.lead}>
+          Geçerli lisans veya deneme olmadan hesaplama ekranları, kayıtlı hesaplar ve diğer uygulama bölümleri açılmaz.
+        </p>
+        <LicensePage />
       </LicenseRuntimeContext.Provider>
     );
   }

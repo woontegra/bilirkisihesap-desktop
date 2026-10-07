@@ -113,36 +113,38 @@ export function SettingsUpdateSection() {
 
   return (
     <section className={styles.panel}>
-      <div className={styles.kicker}>Uygulama ve Güncelleme</div>
-      <div className={styles.row}>
-        <span>Mevcut sürüm</span>
-        <strong>{status?.currentVersion ?? "—"}</strong>
+      <div className={styles.cardHead}>
+        <div>
+          <h3 className={styles.cardTitle}>Uygulama ve Güncelleme</h3>
+          <p className={styles.cardHint}>
+            {status && !status.packaged
+              ? "Geliştirme modunda gerçek üretim feed kontrolü yapılmaz."
+              : "Otomatik güncelleme kontrolü: Etkin (Windows paketli sürüm)."}
+          </p>
+        </div>
+        <div>
+          <span>Mevcut sürüm</span>
+          <strong className={styles.versionValue}>{status?.currentVersion ?? "—"}</strong>
+        </div>
       </div>
-      <div className={styles.row}>
-        <span>Durum</span>
-        <strong>{stateLabel(status?.state ?? "idle")}</strong>
-      </div>
-      {status?.availableVersion ? (
-        <div className={styles.row}>
+      <div className={styles.infoGrid}>
+        <div className={styles.infoCell}>
+          <span>Durum</span>
+          <strong>{stateLabel(status?.state ?? "idle")}</strong>
+        </div>
+        <div className={styles.infoCell}>
           <span>Yeni sürüm</span>
-          <strong>{status.availableVersion}</strong>
+          <strong>{status?.availableVersion ?? "—"}</strong>
         </div>
-      ) : null}
-      {status && !status.packaged ? (
-        <p className={styles.note}>Geliştirme modunda gerçek üretim feed kontrolü yapılmaz.</p>
-      ) : (
-        <p className={styles.note}>Otomatik güncelleme kontrolü: Etkin (Windows paketli sürüm).</p>
-      )}
-
-      {status?.state === "downloading" ? (
-        <div className={styles.row}>
-          <span>İndirme ilerlemesi</span>
-          <strong>%{pct}</strong>
-          <span>
-            {formatBytes(status.progress?.transferred ?? NaN)} / {formatBytes(status.progress?.total ?? NaN)}
-          </span>
-        </div>
-      ) : null}
+        {status?.state === "downloading" ? (
+          <div className={styles.infoCell}>
+            <span>İndirme ilerlemesi</span>
+            <strong>
+              %{pct} · {formatBytes(status.progress?.transferred ?? NaN)} / {formatBytes(status.progress?.total ?? NaN)}
+            </strong>
+          </div>
+        ) : null}
+      </div>
 
       <div className={styles.toolbar}>
         <button

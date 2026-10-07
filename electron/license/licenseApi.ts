@@ -22,6 +22,12 @@ export class LicenseNetworkError extends Error {
   }
 }
 
+export function licensePublicApiBase(): string {
+  const fromEnv = process.env.LICENSE_API_BASE?.trim();
+  if (fromEnv) return fromEnv.replace(/\/$/, "");
+  return "https://lisans-server-backend-production.up.railway.app/api/public/license";
+}
+
 export async function postLicenseJson<T>(baseUrl: string, route: string, body: Record<string, unknown>): Promise<T> {
   const url = `${baseUrl.replace(/\/$/, "")}${route}`;
   let response: Response;

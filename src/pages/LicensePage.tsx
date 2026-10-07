@@ -1,11 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   LICENSE_APP_CODE,
   LICENSE_PRODUCT_NAME,
   type DesktopLicenseStatus,
   type LicenseState,
 } from "../../shared/desktop-contract";
+import { emptySubscriptionCatalog, type DesktopSubscriptionCatalog } from "../../shared/subscriptionAccount";
 import { useDesktopRuntime } from "../desktop/useDesktopRuntime";
+import { SubscriptionAccountPanel } from "../license/SubscriptionAccountPanel";
 import { presentTrialFailure, reducePaidActivation } from "../license/trialNotice";
 import styles from "./pages.module.css";
 
@@ -54,10 +56,50 @@ export function LicensePage() {
   const [busy, setBusy] = useState(false);
   const [formMessage, setFormMessage] = useState<string | null>(null);
   const [trialFailure, setTrialFailure] = useState<string | null>(null);
+  const [catalog, setCatalog] = useState<DesktopSubscriptionCatalog | null>(null);
+  const [catalogLoading, setCatalogLoading] = useState(true);
+  const [catalogReload, setCatalogReload] = useState(0);
+  const [acting, setActing] = useState(false);
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
 
   const current = license ?? runtime?.license ?? null;
   const needsActivation = Boolean(current && !current.isMock && current.state !== "active");
   const trialNotice = trialFailure ? presentTrialFailure(trialFailure) : null;
+
+  useEffect(() => {
+    const api = window.bilirkisiDesktop;
+    if (!api) {
+      setCatalogLoading(false);
+      return;
+    }
+    let active = true;
+    setCatalogLoading(true);
+    void api.getSubscriptionCatalog().then((next) => {
+      if (!active) return;
+      setCatalog(next);
+      setCatalogLoading(false);
+    }).catch(() => {
+      if (!active) return;
+      setCatalog(emptySubscriptionCatalog({ loadError: "Lisans paket bilgisi yüklenemedi." }));
+      setCatalogLoading(false);
+    });
+    return () => {
+      active = false;
+    };
+  }, [catalogReload, current?.isMock, current?.state]);
+
+  async function runCatalogAction(action: "purchase" | "renew"): Promise<void> {
+    const api = window.bilirkisiDesktop;
+    if (!api) return;
+    setActing(true);
+    setActionMessage(null);
+    try {
+      const result = action === "purchase" ? await api.openDesktopPurchase() : await api.openDesktopRenewal();
+      setActionMessage(result.ok ? result.data.message : result.message);
+    } finally {
+      setActing(false);
+    }
+  }
 
   async function startTrial(): Promise<void> {
     const api = window.bilirkisiDesktop;
@@ -97,7 +139,7 @@ export function LicensePage() {
       }
       setLicense(result.data);
       setPassword("");
-      setFormMessage(reducePaidActivation(result).paidFormMessage);
+      setFormMessage(reducePaidActivation({ ok: true, message: result.data.message }).paidFormMessage);
       await runtime?.reload();
     } finally {
       setBusy(false);
@@ -131,7 +173,7 @@ export function LicensePage() {
     <div className={styles.page}>
       <section className={styles.hero}>
         <div className={styles.kicker}>Lisans</div>
-        <h2>{LICENSE_PRODUCT_NAME}</h2>
+        <h2>Lisans Bilgileri</h2>
         <p>
           Lisans işlemleri Woontegra merkezi lisans servisi üzerinden yürütülür. Hesaplama
           kayıtları lisans sunucusuna gönderilmez.
@@ -143,33 +185,70 @@ export function LicensePage() {
           <strong>Mock lisans (geliştirme)</strong>
           <p>{current.message}</p>
         </aside>
-      ) : (
+      ) : null}
+      {trialNotice ? (
         <aside className={styles.banner}>
-          <strong>
-            {trialNotice
-              ? trialNotice.title
-              : current
-                ? STATE_LABELS[current.state]
-                : "Durum yükleniyor"}
-          </strong>
-          <p>{trialNotice ? trialNotice.message : current?.message}</p>
+          <strong>{trialNotice.title}</strong>
+          <p>{trialNotice.message}</p>
         </aside>
-      )}
+      ) : null}
+
+      <section className={`${styles.panel} ${styles.summary}`}>
+        <div className={styles.cardHead}>
+          <div>
+            <div className={styles.kicker}>Lisans durumu</div>
+            <h3 className={styles.cardTitle}>
+              {catalog?.licenseKind === "trial"
+                ? "7 günlük deneme"
+                : catalog?.licenseKind === "paid"
+                  ? "Yıllık Lisans"
+                  : current
+                    ? STATE_LABELS[current.state]
+                    : "Durum yükleniyor"}
+            </h3>
+            <p className={styles.cardHint}>{current?.message || "Lisans durumu hazırlanıyor."}</p>
+          </div>
+          <span className={`${styles.pill} ${current?.state === "active" ? styles.pillOk : styles.pillWarn}`}>
+            {current ? STATE_LABELS[current.state] : "…"}
+          </span>
+        </div>
+        {!needsActivation ? (
+          <div className={styles.toolbar}>
+            <button type="button" className={styles.button} disabled={busy} onClick={() => void refresh()}>
+              Yeniden doğrula
+            </button>
+          </div>
+        ) : null}
+        {!needsActivation && formMessage ? <p className={styles.note}>{formMessage}</p> : null}
+      </section>
+
+      <SubscriptionAccountPanel
+        license={current}
+        catalog={catalog}
+        loading={catalogLoading}
+        onRetry={() => setCatalogReload((value) => value + 1)}
+        onPurchase={() => void runCatalogAction("purchase")}
+        onRenew={() => void runCatalogAction("renew")}
+        acting={acting}
+        actionMessage={actionMessage}
+      />
 
       {needsActivation && !current?.isMock ? (
         <>
         <section className={styles.panel}>
-          <span>7 günlük ücretsiz deneme</span>
-          <label className={styles.row}>
-            <span>E-posta</span>
-            <input
-              className={styles.input}
-              type="email"
-              value={trialEmail}
-              onChange={(event) => setTrialEmail(event.target.value)}
-              autoComplete="email"
-            />
-          </label>
+          <h3 className={styles.cardTitle}>7 günlük ücretsiz deneme</h3>
+          <div className={styles.formGrid}>
+            <label className={styles.row}>
+              <span>E-posta</span>
+              <input
+                className={styles.input}
+                type="email"
+                value={trialEmail}
+                onChange={(event) => setTrialEmail(event.target.value)}
+                autoComplete="email"
+              />
+            </label>
+          </div>
           <div className={styles.toolbar}>
             <button type="button" className={styles.button} disabled={busy} onClick={() => void startTrial()}>
               Denemeyi bu cihazda başlat
@@ -186,27 +265,29 @@ export function LicensePage() {
           )}
         </section>
         <section className={styles.panel}>
-          <span>Satın alınmış lisansı etkinleştir</span>
-          <label className={styles.row}>
-            <span>Lisans anahtarı</span>
-            <input
-              className={styles.input}
-              value={licenseKey}
-              onChange={(event) => setLicenseKey(event.target.value)}
-              autoComplete="off"
-              spellCheck={false}
-            />
-          </label>
-          <label className={styles.row}>
-            <span>Aktivasyon şifresi</span>
-            <input
-              className={styles.input}
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              autoComplete="off"
-            />
-          </label>
+          <h3 className={styles.cardTitle}>Satın alınmış lisansı etkinleştir</h3>
+          <div className={styles.formGrid}>
+            <label className={styles.row}>
+              <span>Lisans anahtarı</span>
+              <input
+                className={styles.input}
+                value={licenseKey}
+                onChange={(event) => setLicenseKey(event.target.value)}
+                autoComplete="off"
+                spellCheck={false}
+              />
+            </label>
+            <label className={styles.row}>
+              <span>Aktivasyon şifresi</span>
+              <input
+                className={styles.input}
+                type="password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                autoComplete="off"
+              />
+            </label>
+          </div>
           <div className={styles.toolbar}>
             <button type="button" className={styles.button} disabled={busy} onClick={() => void activate()}>
               Lisansı Etkinleştir
@@ -222,54 +303,51 @@ export function LicensePage() {
           </p>
         </section>
         </>
-      ) : (
-        <div className={styles.toolbar}>
-          <button type="button" className={styles.button} disabled={busy} onClick={() => void refresh()}>
-            Yeniden doğrula
-          </button>
-        </div>
-      )}
+      ) : null}
 
       <section className={styles.panel}>
-        <div className={styles.row}>
-          <span>Ürün</span>
-          <strong>{LICENSE_PRODUCT_NAME}</strong>
-        </div>
-        <div className={styles.row}>
-          <span>Ürün kodu</span>
-          <strong>{current?.productCode ?? LICENSE_APP_CODE}</strong>
-        </div>
-        <div className={styles.row}>
-          <span>Durum</span>
-          <strong>{current ? STATE_LABELS[current.state] : "…"}</strong>
-        </div>
-        <div className={styles.row}>
-          <span>Lisans anahtarı</span>
-          <strong>{current?.maskedLicenseKey ?? "—"}</strong>
-        </div>
-        <div className={styles.row}>
-          <span>Bitiş tarihi</span>
-          <strong>{formatDate(current?.expiresAt ?? null)}</strong>
-        </div>
-        <div className={styles.row}>
-          <span>Kalan gün</span>
-          <strong>{remainingLabel(current?.expiresAt ?? null)}</strong>
-        </div>
-        <div className={styles.row}>
-          <span>Son doğrulama</span>
-          <strong>{formatDate(current?.lastSuccessfulValidationAt ?? current?.lastCheckedAt ?? null)}</strong>
-        </div>
-        <div className={styles.row}>
-          <span>Cihaz limiti</span>
-          <strong>{current?.maxDevices ?? "—"}</strong>
-        </div>
-        <div className={styles.row}>
-          <span>Çevrimdışı süre sonu</span>
-          <strong>{formatDate(current?.offlineGraceUntil ?? null)}</strong>
-        </div>
-        <div className={styles.row}>
-          <span>Kayıt yazma</span>
-          <strong>{current?.canWriteRecords ? "Açık" : "Salt okunur"}</strong>
+        <h3 className={styles.cardTitle}>Lisans Detayları</h3>
+        <div className={styles.infoGrid}>
+          <div className={styles.infoCell}>
+            <span>Ürün</span>
+            <strong>{LICENSE_PRODUCT_NAME}</strong>
+          </div>
+          <div className={styles.infoCell}>
+            <span>Ürün kodu</span>
+            <strong>{current?.productCode ?? LICENSE_APP_CODE}</strong>
+          </div>
+          <div className={styles.infoCell}>
+            <span>Durum</span>
+            <strong>{current ? STATE_LABELS[current.state] : "…"}</strong>
+          </div>
+          <div className={styles.infoCell}>
+            <span>Lisans anahtarı</span>
+            <strong>{current?.maskedLicenseKey ?? "—"}</strong>
+          </div>
+          <div className={styles.infoCell}>
+            <span>Bitiş tarihi</span>
+            <strong>{formatDate(current?.expiresAt ?? null)}</strong>
+          </div>
+          <div className={styles.infoCell}>
+            <span>Kalan gün</span>
+            <strong>{remainingLabel(current?.expiresAt ?? null)}</strong>
+          </div>
+          <div className={styles.infoCell}>
+            <span>Son doğrulama</span>
+            <strong>{formatDate(current?.lastSuccessfulValidationAt ?? current?.lastCheckedAt ?? null)}</strong>
+          </div>
+          <div className={styles.infoCell}>
+            <span>Cihaz limiti</span>
+            <strong>{current?.maxDevices ?? "—"}</strong>
+          </div>
+          <div className={styles.infoCell}>
+            <span>Çevrimdışı süre sonu</span>
+            <strong>{formatDate(current?.offlineGraceUntil ?? null)}</strong>
+          </div>
+          <div className={styles.infoCell}>
+            <span>Kayıt yazma</span>
+            <strong>{current?.canWriteRecords ? "Açık" : "Salt okunur"}</strong>
+          </div>
         </div>
       </section>
     </div>

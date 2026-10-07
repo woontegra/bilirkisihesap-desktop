@@ -1,6 +1,6 @@
 /** Platform-aware Bilirkişi Hesap update feed URLs. Product version is shared; feeds are not. */
 export const WINDOWS_UPDATE_FEED_URL =
-  "https://updates.woontegra.com/updates/bilirkisi-hesap/windows";
+  "https://updates.woontegra.com/updates/bilirkisi-hesap-desktop/windows";
 
 /** Reserved for future macOS updater — do not use from Windows code paths. */
 export const MACOS_UPDATE_FEED_URL =

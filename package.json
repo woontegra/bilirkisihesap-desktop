@@ -1,6 +1,6 @@
 {
   "name": "bilirkisi-desktop",
-  "version": "3.6.0",
+  "version": "3.6.2",
   "private": true,
   "description": "Bilirkişi Hesap bağımsız Windows/macOS masaüstü uygulaması",
   "author": "Woontegra",
@@ -10,7 +10,7 @@
     "node": ">=20"
   },
   "config": {
-    "updateBaseUrl": "https://updates.woontegra.com/updates/bilirkisi-hesap/windows"
+    "updateBaseUrl": "https://updates.woontegra.com/updates/bilirkisi-hesap-desktop/windows"
   },
   "scripts": {
     "dev": "vite",
@@ -22,6 +22,7 @@
     "dist:win": "npm run build && electron-builder --win nsis",
     "dist:win:update": "node scripts/run-dist-win-update.cjs",
     "release:update": "node scripts/run-release-update.cjs",
+    "release:update:current": "node scripts/run-release-update-current.cjs",
     "release:update:metadata": "node scripts/run-release-update-metadata.cjs",
     "test:updater": "node scripts/run-updater-selftest.cjs",
     "test:parity": "npx vite-node --config vite.config.ts src/pages/hesaplamalar/shared/bruttenNeteParity.selftest.ts",
@@ -33,7 +34,7 @@
     "artifactName": "Bilirkisi-Hesap-Setup-${version}.${ext}",
     "directories": {
       "buildResources": "build",
-      "output": "C:/Temp/bilirkisi-desktop-release"
+      "output": "release"
     },
     "files": [
       "dist/**/*",
@@ -82,7 +83,7 @@
     "publish": [
       {
         "provider": "generic",
-        "url": "https://updates.woontegra.com/updates/bilirkisi-hesap/windows"
+        "url": "https://updates.woontegra.com/updates/bilirkisi-hesap-desktop/windows"
       }
     ]
   },

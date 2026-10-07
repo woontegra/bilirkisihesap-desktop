@@ -1,3 +1,4 @@
+import type { DesktopSubscriptionCatalog } from "./subscriptionAccount";
 import type { UpdateActionResult, UpdateCheckSource, UpdateStatusSnapshot } from "./updateTypes";
 
 export const IPC_CHANNELS = {
@@ -15,6 +16,10 @@ export const IPC_CHANNELS = {
   activateLicense: "desktop:activate-license",
   startTrial: "desktop:start-trial",
   refreshLicense: "desktop:refresh-license",
+  getSubscriptionCatalog: "desktop:get-subscription-catalog",
+  openDesktopPurchase: "desktop:open-desktop-purchase",
+  openDesktopRenewal: "desktop:open-desktop-renewal",
+  openDesktopContact: "desktop:open-desktop-contact",
   calculateKidem: "desktop:calculate-kidem",
   fetchDepositInterestRates: "desktop:fetch-deposit-interest-rates",
   exportSavedCasesBackup: "desktop:export-saved-cases-backup",
@@ -236,6 +241,10 @@ export type DesktopApi = {
   activateLicense: (payload: LicenseActivatePayload) => Promise<IpcResult<DesktopLicenseStatus>>;
   startTrial: (payload: LicenseTrialPayload) => Promise<IpcResult<DesktopLicenseStatus>>;
   refreshLicense: () => Promise<IpcResult<DesktopLicenseStatus>>;
+  getSubscriptionCatalog: () => Promise<DesktopSubscriptionCatalog>;
+  openDesktopPurchase: () => Promise<IpcResult<{ message: string }>>;
+  openDesktopRenewal: () => Promise<IpcResult<{ message: string }>>;
+  openDesktopContact: () => Promise<IpcResult<{ message: string }>>;
   getStorageInfo: () => Promise<DesktopStorageInfo>;
   listCalculationRecords: () => Promise<IpcResult<CalculationRecord[]>>;
   getCalculationRecord: (id: string) => Promise<IpcResult<CalculationRecord>>;

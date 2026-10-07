@@ -1,21 +1,5 @@
-.lock {
-  min-height: 100vh;
-  padding: 2rem 1.25rem 3rem;
-  background: var(--page);
-}
-
-.card,
-.panel {
-  width: min(52rem, 100%);
-  margin: 0 auto;
-}
-
-.card {
-  padding: 1.25rem;
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  background: var(--surface);
-  text-align: center;
+.status {
+  padding: 0.25rem 0 0.5rem;
 }
 
 .lead {

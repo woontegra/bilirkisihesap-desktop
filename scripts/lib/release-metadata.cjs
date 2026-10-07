@@ -9,11 +9,12 @@ const { spawnSync } = require("child_process");
 const { serializeToYaml } = require("builder-util");
 
 const ROOT = path.join(__dirname, "..", "..");
-// Desktop/Controlled Folder Access altında electron unpack rename EPERM verdiği için
-// Windows release çıktısı proje dışı Temp klasörüne alınır.
 const RELEASE_DIR = process.env.BILIRKISI_RELEASE_DIR
   ? path.resolve(process.env.BILIRKISI_RELEASE_DIR)
-  : "C:\\Temp\\bilirkisi-desktop-release";
+  : path.join(ROOT, "release");
+if (/[\\/]Temp[\\/]/i.test(RELEASE_DIR)) {
+  throw new Error("Release çıktısı Temp klasörüne yazılamaz. Hedef proje kökündeki release klasörüdür.");
+}
 
 /**
  * Electron-builder 26: app-builder-bin Go CLI kaldırıldı.
@@ -154,8 +155,8 @@ async function createBlockmap(exePath, log = console.log) {
   return blockmapPath;
 }
 
-function writeLatestYml(fileName, version, sha512, size) {
-  const latestPath = path.join(RELEASE_DIR, "latest.yml");
+function writeLatestYml(fileName, version, sha512, size, outputDir = RELEASE_DIR) {
+  const latestPath = path.join(outputDir, "latest.yml");
   const info = {
     version,
     files: [{ url: fileName, sha512, size }],

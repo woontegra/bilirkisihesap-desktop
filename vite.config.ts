@@ -6,6 +6,8 @@ import * as esbuild from "esbuild";
 import type { Plugin, ViteDevServer } from "vite";
 import { defineConfig } from "vite";
 import electron from "vite-plugin-electron";
+// @ts-expect-error websiteDevOrigin.mjs has no declaration file
+import { readWebsiteDevOrigin } from "./scripts/websiteDevOrigin.mjs";
 
 const rootDir = path.dirname(fileURLToPath(import.meta.url));
 const preloadOutFile = path.join(rootDir, "dist-electron/preload.cjs");
@@ -50,7 +52,13 @@ function electronPreloadPlugin(): Plugin {
 
 const skipElectron = process.env.ELECTRON_SKIP === "1";
 
-export default defineConfig({
+export default defineConfig(({ command }) => {
+  if (command === "serve") {
+    const websiteDevOrigin = readWebsiteDevOrigin();
+    if (websiteDevOrigin) process.env.SUBSCRIPTION_WEBSITE_DEV_BASE = websiteDevOrigin;
+  }
+
+  return {
   root: rootDir,
   base: "./",
   resolve: {
@@ -74,7 +82,10 @@ export default defineConfig({
             {
               entry: "electron/main.ts",
               onstart({ startup }) {
-                void Promise.resolve(startup()).catch(() => undefined);
+                const websiteDevOrigin = readWebsiteDevOrigin();
+                const env = { ...process.env };
+                if (websiteDevOrigin) env.SUBSCRIPTION_WEBSITE_DEV_BASE = websiteDevOrigin;
+                void Promise.resolve(startup([".", "--no-sandbox"], { env })).catch(() => undefined);
               },
               vite: {
                 define: {
@@ -103,4 +114,5 @@ export default defineConfig({
           ]),
         ]),
   ],
+  };
 });

@@ -10,6 +10,7 @@ import {
 import type { LicenseClient } from "./LicenseClient";
 import {
   LicenseNetworkError,
+  licensePublicApiBase,
   postLicenseJson,
   type LicenseActivateApiResponse,
   type LicenseValidateApiResponse,
@@ -26,13 +27,10 @@ import {
   userMessageForState,
 } from "./licensePolicy";
 import { readStoredLicense, touchLastSeen, writeStoredLicense, type StoredLicenseRecord } from "./licenseStore";
+import { paidRecordFromHandoff } from "./paidHandoff";
 
 function apiBase(): string {
-  const fromEnv = process.env.LICENSE_API_BASE?.trim();
-  if (fromEnv) {
-    return fromEnv.replace(/\/$/, "");
-  }
-  return "https://lisans-server-backend-production.up.railway.app/api/public/license";
+  return licensePublicApiBase();
 }
 
 export class CentralLicenseClient implements LicenseClient {
@@ -147,7 +145,7 @@ export class CentralLicenseClient implements LicenseClient {
 
   private async resolveStatus(): Promise<DesktopLicenseStatus> {
     const now = Date.now();
-    const stored = readStoredLicense();
+    let stored = readStoredLicense();
     if (stored && (stored.licenseKey || stored.kind === "trial")) {
       if (detectClockAnomaly(stored.lastSeenAt, now)) {
         return this.fromStore(stored, {
@@ -159,7 +157,9 @@ export class CentralLicenseClient implements LicenseClient {
     }
 
     if (stored?.kind === "trial") {
-      return this.resolveTrialStatus(stored, now);
+      const claimed = await this.claimPaidHandoff(stored);
+      if (!claimed) return this.resolveTrialStatus(stored, now);
+      stored = claimed;
     }
 
     if (!stored?.licenseKey || stored.status === "NONE") {
@@ -259,6 +259,29 @@ export class CentralLicenseClient implements LicenseClient {
         state: "offline_expired",
         message: userMessageForState("offline_expired"),
       });
+    }
+  }
+
+  private async claimPaidHandoff(stored: StoredLicenseRecord): Promise<StoredLicenseRecord | null> {
+    const platform = getEntitlementPlatform();
+    if (!platform || stored.kind !== "trial") return null;
+    try {
+      const out = await postLicenseJson<{
+        success?: boolean;
+        licenseKey?: string;
+        expiresAt?: string;
+        maxDevices?: number;
+      }>(apiBase(), "/purchase-handoff", {
+        appCode: LICENSE_APP_CODE,
+        deviceHash: stored.deviceHash,
+        platform,
+      });
+      const next = paidRecordFromHandoff(stored.deviceHash, out);
+      if (!next) return null;
+      writeStoredLicense(next);
+      return next;
+    } catch {
+      return null;
     }
   }
 

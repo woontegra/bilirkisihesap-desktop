@@ -1,11 +1,7 @@
 /**
- * release:update — mevcut ortak ürün sürümüyle paketleme + harici Program-Imzala.ps1
- * + imzalı EXE üzerinden blockmap/latest.yml.
- *
- * SÜRÜM ARTIRMAZ. Bilirkişi Hesap ortak ürün sürümü (SaaS/Windows/macOS) elle
- * kararlaştırılır; Windows release kendi başına patch bump yapmaz.
- *
- * R2'ye otomatik yükleme yapmaz.
+ * release:update — patch sürüm artır → paketleme + Program-Imzala.ps1 + imzalı metadata.
+ * RELEASE_UPDATE_SKIP_BUMP=1 ise mevcut sürüm korunur (release:update:current).
+ * R2'ye otomatik yükleme yapmaz. Çıktı proje kökündeki release klasörüdür.
  */
 const { spawnSync } = require("child_process");
 const fs = require("fs");
@@ -18,6 +14,7 @@ const {
   verifyAuthenticode,
   refreshSignedReleaseMetadata,
 } = require("./lib/release-metadata.cjs");
+const { bumpPatchVersion } = require("./lib/bump-version.cjs");
 
 const SIGN_PS1 = "C:\\Users\\Woontegra\\Desktop\\Program-Imzala.ps1";
 
@@ -131,16 +128,23 @@ async function main() {
   const updateBaseUrl = requireUpdateBaseUrl();
   process.env.UPDATE_BASE_URL = updateBaseUrl;
 
-  const pkgBefore = readPackageJson();
-  logStep(`Ortak ürün sürümü (artırılmayacak): ${pkgBefore.version}`);
+  const skipBump = process.env.RELEASE_UPDATE_SKIP_BUMP === "1";
+  const before = String(readPackageJson().version || "");
+  let bumped = null;
+  if (skipBump) {
+    logStep(`Sürüm korunuyor: ${before}`);
+  } else {
+    bumped = bumpPatchVersion(logStep);
+  }
 
   runDistWinUpdate(updateBaseUrl);
 
   const pkg = readPackageJson();
-  if (pkg.version !== pkgBefore.version) {
-    die(
-      `Sürüm beklenmedik şekilde değişti (${pkgBefore.version} → ${pkg.version}). Release durduruldu.`,
-    );
+  if (skipBump && pkg.version !== before) {
+    die(`Sürüm beklenmedik şekilde değişti (${before} → ${pkg.version}). Release durduruldu.`);
+  }
+  if (!skipBump && pkg.version === before) {
+    die(`Patch sürüm artmadı (${before}). Release durduruldu.`);
   }
 
   const setupPath = findSetupExe(pkg.version);
@@ -176,7 +180,9 @@ async function main() {
 
   console.log("");
   console.log("[release:update] Tamamlandı.");
-  console.log(`  Version    : ${pkg.version} (ortak ürün sürümü; bump yok)`);
+  console.log(
+    `  Version    : ${bumped ? `${bumped.before} → ${bumped.after}` : `${pkg.version} (sürüm korunuyor)`}`,
+  );
   console.log(`  Setup EXE : ${setupPath}`);
   console.log(`  Authenticode: Valid`);
   console.log(`  latest.yml : ${result.latestPath}`);
@@ -184,7 +190,7 @@ async function main() {
   console.log(`  sha512     : ${result.sha512}`);
   console.log(`  size       : ${result.size}`);
   console.log("");
-  console.log("Manuel R2 yükleme: woontegra-downloads/updates/bilirkisi-hesap/windows/");
+  console.log("Manuel R2 yükleme: woontegra-downloads/updates/bilirkisi-hesap-desktop/windows/");
   console.log("Yüklenecek: latest.yml, Setup EXE, EXE.blockmap (latest.yml üzerine yazılır).");
 }
 

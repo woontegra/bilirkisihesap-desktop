@@ -17,7 +17,7 @@ const {
   readPackageJson,
 } = require("./lib/release-metadata.cjs");
 
-const WIN_FEED = "https://updates.woontegra.com/updates/bilirkisi-hesap/windows";
+const WIN_FEED = "https://updates.woontegra.com/updates/bilirkisi-hesap-desktop/windows";
 const MAC_FEED = "https://updates.woontegra.com/updates/bilirkisi-hesap/macos";
 
 let passed = 0;
@@ -34,8 +34,8 @@ function main() {
   console.log("[test:updater] başlıyor…");
 
   const pkg = readPackageJson();
-  assert.equal(pkg.version, "3.6.0");
-  ok("package.json version = 3.6.0");
+  assert.equal(pkg.version, "3.6.2");
+  ok("package.json version = 3.6.2");
 
   assert.equal(pkg.build?.appId, "com.woontegra.bilirkisihesap");
   ok("appId = com.woontegra.bilirkisihesap");
@@ -58,17 +58,19 @@ function main() {
   assert.equal(pkg.build?.nsis?.deleteAppDataOnUninstall, false);
   ok("NSIS deleteAppDataOnUninstall = false");
 
-  assert.equal(expectedSetupName("3.6.0"), "Bilirkisi-Hesap-Setup-3.6.0.exe");
-  ok("expectedSetupName(3.6.0)");
+  assert.equal(expectedSetupName("3.6.2"), "Bilirkisi-Hesap-Setup-3.6.2.exe");
+  ok("expectedSetupName(3.6.2)");
 
   assert.ok(pkg.dependencies?.["electron-updater"]);
   assert.ok(pkg.dependencies?.["electron-log"]);
   ok("electron-updater + electron-log dependency");
 
   const releaseScript = read("scripts/run-release-update.cjs");
-  assert.ok(!/bumpPatchVersion|npm version patch/.test(releaseScript));
-  assert.ok(/artırılmayacak|SÜRÜM ARTIRMAZ|bump yok/i.test(releaseScript));
-  ok("release:update sürüm artırmaz");
+  assert.ok(releaseScript.includes("bumpPatchVersion"));
+  assert.ok(releaseScript.includes("RELEASE_UPDATE_SKIP_BUMP"));
+  const currentScript = read("scripts/run-release-update-current.cjs");
+  assert.ok(currentScript.includes('RELEASE_UPDATE_SKIP_BUMP = "1"'));
+  ok("release:update patch artırır; release:update:current artırmaz");
 
   const feeds = read("shared/updateFeeds.ts");
   assert.ok(feeds.includes(WIN_FEED));
@@ -128,19 +130,20 @@ function main() {
   assert.ok(contract.includes("updateStatusChanged"));
   ok("desktop-contract update kanalları");
 
-  // Metadata consistency with fake "signed" artifact
-  fs.mkdirSync(RELEASE_DIR, { recursive: true });
-  const tmpExe = path.join(RELEASE_DIR, "Bilirkisi-Hesap-Setup-3.6.0.exe");
+  // Metadata consistency with a fake artifact outside the real release folder
+  const scratch = path.join(os.tmpdir(), "bilirkisi-updater-selftest");
+  fs.mkdirSync(scratch, { recursive: true });
+  const tmpExe = path.join(scratch, "Bilirkisi-Hesap-Setup-3.6.2.exe");
   const payload = Buffer.from(`bilirkisi-fake-signed-exe-${Date.now()}-${crypto.randomBytes(8).toString("hex")}`);
   fs.writeFileSync(tmpExe, payload);
   const sha = calculateSha512Base64(tmpExe);
   const size = payload.length;
   // Fake blockmap presence for verify
   fs.writeFileSync(`${tmpExe}.blockmap`, Buffer.from("fake-blockmap"));
-  const latest = writeLatestYml(path.basename(tmpExe), "3.6.0", sha, size);
+  const latest = writeLatestYml(path.basename(tmpExe), "3.6.2", sha, size, scratch);
   const yml = parseLatestYml(fs.readFileSync(latest, "utf8"));
-  assert.equal(yml.version, "3.6.0");
-  assert.equal(yml.path, "Bilirkisi-Hesap-Setup-3.6.0.exe");
+  assert.equal(yml.version, "3.6.2");
+  assert.equal(yml.path, "Bilirkisi-Hesap-Setup-3.6.2.exe");
   assert.equal(yml.sha512, sha);
   assert.equal(yml.fileSha512, sha);
   assert.equal(yml.fileSize, size);
@@ -155,9 +158,9 @@ function main() {
 
   // Ensure release scripts point to bilirkisi R2 path not muvekkil
   const distWin = read("scripts/run-dist-win-update.cjs");
-  assert.ok(distWin.includes("bilirkisi-hesap/windows"));
+  assert.ok(distWin.includes("bilirkisi-hesap-desktop/windows"));
   assert.ok(!distWin.includes("muvekkil-kasa-defteri"));
-  ok("dist:win:update R2 yolu bilirkisi-hesap/windows");
+  ok("dist:win:update R2 yolu bilirkisi-hesap-desktop/windows");
 
   console.log("");
   console.log(`[test:updater] ${passed} kontrol geçti.`);

@@ -13,6 +13,12 @@ import { AppError, toUserMessage } from "./db/errors";
 import { getSetting, setSetting } from "./db/settingsRepository";
 import { getDesktopStorageInfo } from "./db/storageInfo";
 import type { LicenseClient } from "./license/LicenseClient";
+import {
+  loadDesktopSubscriptionCatalog,
+  openDesktopContact,
+  openDesktopFirstPurchase,
+  openDesktopRenewal,
+} from "./license/subscriptionCatalog";
 import { calculateKidemWithLicense } from "./kidem/kidemCalculationService";
 import { getDepositInterestRates } from "./icra/depositInterestService";
 import { getDashboardSummary } from "./dashboard/dashboardSummary";
@@ -65,6 +71,12 @@ export function registerIpcHandlers(licenseClient: LicenseClient, appInfo: AppIn
     return licenseClientRef.startTrial(body);
   });
   ipcMain.handle(IPC_CHANNELS.refreshLicense, async () => licenseClientRef.refresh());
+  ipcMain.handle(IPC_CHANNELS.getSubscriptionCatalog, async () =>
+    loadDesktopSubscriptionCatalog(licenseClientRef),
+  );
+  ipcMain.handle(IPC_CHANNELS.openDesktopPurchase, async () => openDesktopFirstPurchase());
+  ipcMain.handle(IPC_CHANNELS.openDesktopRenewal, async () => openDesktopRenewal());
+  ipcMain.handle(IPC_CHANNELS.openDesktopContact, async () => openDesktopContact());
   ipcMain.handle(IPC_CHANNELS.getStorageInfo, async () => getDesktopStorageInfo());
 
   ipcMain.handle(IPC_CHANNELS.listCalculationRecords, async () => wrap(() => listCalculationRecords()));

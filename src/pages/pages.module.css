@@ -1,6 +1,6 @@
 .page {
   display: grid;
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
 .hero {
@@ -8,7 +8,6 @@
   gap: 0.45rem;
 }
 
-.kicker,
 .kicker {
   color: var(--muted);
   font-size: var(--fs-xs);
@@ -18,6 +17,7 @@
 }
 
 .hero h2 {
+  margin: 0;
   color: var(--text-strong);
   font-size: var(--fs-lg);
   letter-spacing: -0.03em;
@@ -31,16 +31,23 @@
 }
 
 .banner {
-  padding: 0.8rem 0.95rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.65rem;
+  padding: 0.45rem 0.7rem;
   border: 1px solid color-mix(in srgb, var(--warning) 28%, var(--border));
   border-radius: var(--radius-md);
   background: var(--warning-soft);
 }
 
 .banner strong {
-  display: block;
-  margin-bottom: 0.2rem;
   color: var(--warning);
+}
+
+.banner p {
+  margin: 0;
+  font-size: var(--fs-xs);
 }
 
 .grid {
@@ -53,14 +60,16 @@
 .panel {
   padding: 0.9rem 1rem;
   border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   background: var(--surface);
   box-shadow: var(--shadow-sm);
 }
 
 .card span,
-.panel span,
-.row span {
+.row span,
+.infoCell span,
+.pathBlock span,
+.cardHead span:not(.pill) {
   display: block;
   margin-bottom: 0.2rem;
   color: var(--muted);
@@ -174,7 +183,130 @@
   cursor: pointer;
 }
 
-@media (max-width: 1100px) {
+.summary {
+  border-color: color-mix(in srgb, var(--accent) 32%, var(--border-subtle));
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 70%, var(--surface)), var(--surface) 72%);
+}
+
+.cardHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.65rem;
+}
+
+.cardTitle {
+  margin: 0;
+  color: var(--text-strong);
+  font-size: var(--fs-sm);
+  font-weight: 650;
+}
+
+.cardHint {
+  margin: 0.15rem 0 0;
+  color: var(--muted);
+  font-size: var(--fs-xs);
+}
+
+.panel .pill {
+  display: inline-flex;
+  align-items: center;
+  margin: 0;
+  padding: 0.18rem 0.5rem;
+  border-radius: 999px;
+  font-size: var(--fs-xs);
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.pillOk {
+  border: 1px solid color-mix(in srgb, var(--success, #2a6b52) 35%, var(--border));
+  background: var(--success-soft, #e7f4ee);
+  color: var(--success, #2a6b52);
+}
+
+.pillWarn {
+  border: 1px solid color-mix(in srgb, var(--warning) 35%, var(--border));
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
+.infoGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.infoCell {
+  min-width: 0;
+  min-height: 2.55rem;
+  padding: 0.4rem 0.55rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--surface-muted);
+}
+
+.infoCell strong {
+  display: block;
+  overflow-wrap: anywhere;
+  font-size: var(--fs-sm);
+  font-weight: 650;
+}
+
+.versionValue {
+  display: block;
+  color: var(--text-strong);
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.noteList {
+  display: grid;
+  gap: 0.3rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.noteItem {
+  padding: 0.35rem 0.55rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--surface-muted);
+  color: var(--text);
+  font-size: var(--fs-xs);
+  line-height: 1.4;
+}
+
+.pathBlock {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.pathBlock .path {
+  user-select: all;
+  cursor: text;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+@media (max-width: 980px) {
+  .infoGrid,
+  .formGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 680px) {
+  .infoGrid,
+  .formGrid,
   .grid {
     grid-template-columns: 1fr;
   }

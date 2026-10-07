@@ -41,9 +41,9 @@ function readAppVersion(): string {
   try {
     const packageJsonPath = path.join(app.getAppPath(), "package.json");
     const parsed = JSON.parse(readFileSync(packageJsonPath, "utf8")) as { version?: string };
-    return parsed.version ?? "3.6.0";
+    return parsed.version ?? "3.6.2";
   } catch {
-    return "3.6.0";
+    return "3.6.2";
   }
 }
 

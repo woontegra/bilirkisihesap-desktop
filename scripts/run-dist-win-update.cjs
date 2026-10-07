@@ -68,6 +68,9 @@ const builderArgs = [
   `-c.publish.url=${updateBaseUrl}`,
 ];
 
+const renameHook = path.join(root, "scripts", "lib", "win-unpack-rename.cjs").replace(/\\/g, "/");
+const nodeOptions = [process.env.NODE_OPTIONS, `--require ${renameHook}`].filter(Boolean).join(" ");
+
 const pack = spawnSync(npxCmd, builderArgs, {
   cwd: root,
   stdio: "inherit",
@@ -75,6 +78,7 @@ const pack = spawnSync(npxCmd, builderArgs, {
   env: {
     ...process.env,
     UPDATE_BASE_URL: updateBaseUrl,
+    NODE_OPTIONS: nodeOptions,
   },
 });
 
@@ -84,7 +88,7 @@ if (pack.status !== 0) {
 
 console.log("");
 console.log("[dist:win:update] Tamamlandı. R2'ye otomatik yükleme yapılmadı.");
-console.log("Manuel yükleme hedefi: woontegra-downloads/updates/bilirkisi-hesap/windows/");
+console.log("Manuel yükleme hedefi: woontegra-downloads/updates/bilirkisi-hesap-desktop/windows/");
 console.log("Yüklenecek dosyalar (release/): latest.yml, Setup EXE, EXE.blockmap");
 console.log("Not: latest.yml her yeni sürümde üzerine yazılır; eski Setup EXE dosyaları silinmez.");
 console.log("Not: imzasız metadata kullanılmamalı — release:update imza sonrası metadata yeniler.");

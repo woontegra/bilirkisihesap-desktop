@@ -17,65 +17,71 @@ export function SettingsPage() {
       </section>
 
       <section className={styles.panel}>
-        <div className={styles.kicker}>Sürüm Bilgisi</div>
-        <div className={styles.row}>
-          <span>Sürüm</span>
-          <strong>{PRODUCT_VERSION}</strong>
-        </div>
-        {PRODUCT_VERSION_NOTES.map((note) => (
-          <div key={note} className={styles.row}>
-            <span>Değişiklik</span>
-            <strong>{note}</strong>
+        <div className={styles.cardHead}>
+          <div>
+            <h3 className={styles.cardTitle}>Sürüm Bilgisi</h3>
+            <p className={styles.cardHint}>Yüklü sürüm ve bu sürümdeki değişiklikler</p>
           </div>
-        ))}
+          <strong className={styles.versionValue}>{PRODUCT_VERSION}</strong>
+        </div>
+        <ul className={styles.noteList}>
+          {PRODUCT_VERSION_NOTES.map((note) => (
+            <li key={note} className={styles.noteItem}>{note}</li>
+          ))}
+        </ul>
       </section>
 
       <SettingsUpdateSection />
 
       <section className={styles.panel}>
-        <div className={styles.row}>
-          <span>Uygulama sürümü</span>
-          <strong>
-            {runtime?.app.name} {runtime?.app.version}
-          </strong>
-        </div>
-        <div className={styles.row}>
-          <span>Veritabanı bağlantısı</span>
-          <strong>{connected ? "Bağlı" : "Bağlı değil"}</strong>
-        </div>
-        <div className={styles.row}>
-          <span>Şema / migration sürümü</span>
-          <strong>{storage?.schemaVersion ?? "—"}</strong>
-        </div>
-        <div className={styles.row}>
-          <span>Kayıt sayısı</span>
-          <strong>{storage?.recordCount ?? "—"}</strong>
+        <h3 className={styles.cardTitle}>Uygulama ve Veritabanı</h3>
+        <div className={styles.infoGrid}>
+          <div className={styles.infoCell}>
+            <span>Uygulama sürümü</span>
+            <strong>
+              {runtime?.app.name} {runtime?.app.version}
+            </strong>
+          </div>
+          <div className={styles.infoCell}>
+            <span>Veritabanı bağlantısı</span>
+            <strong>{connected ? "Bağlı" : "Bağlı değil"}</strong>
+          </div>
+          <div className={styles.infoCell}>
+            <span>Şema / migration sürümü</span>
+            <strong>{storage?.schemaVersion ?? "—"}</strong>
+          </div>
+          <div className={styles.infoCell}>
+            <span>Kayıt sayısı</span>
+            <strong>{storage?.recordCount ?? "—"}</strong>
+          </div>
         </div>
       </section>
 
       <section className={styles.panel}>
-        <div className={styles.kicker}>Sistem Bilgileri</div>
-        <div className={styles.row}>
-          <span>İşletim sistemi</span>
-          <strong>
-            {runtime
-              ? `${runtime.app.platform === "win32" ? "Windows" : runtime.app.platform === "darwin" ? "macOS" : runtime.app.platform} · ${runtime.app.arch}`
-              : "…"}
-          </strong>
+        <h3 className={styles.cardTitle}>Sistem Bilgileri</h3>
+        <div className={styles.infoGrid}>
+          <div className={styles.infoCell}>
+            <span>İşletim sistemi</span>
+            <strong>
+              {runtime
+                ? `${runtime.app.platform === "win32" ? "Windows" : runtime.app.platform === "darwin" ? "macOS" : runtime.app.platform} · ${runtime.app.arch}`
+                : "…"}
+            </strong>
+          </div>
+          <div className={styles.infoCell}>
+            <span>Lisans kaynağı</span>
+            <strong>{runtime?.license.isMock ? "Geliştirme" : runtime?.license.source ?? "—"}</strong>
+          </div>
         </div>
-        <div className={styles.row}>
-          <span>Lisans kaynağı</span>
-          <strong>{runtime?.license.isMock ? "Geliştirme" : runtime?.license.source ?? "—"}</strong>
-        </div>
-        <div className={styles.row}>
+        <div className={styles.pathBlock}>
           <span>Kullanıcı verisi</span>
           <code className={styles.path}>{storage?.userDataPath ?? "…"}</code>
         </div>
-        <div className={styles.row}>
+        <div className={styles.pathBlock}>
           <span>Veritabanı dosyası</span>
           <code className={styles.path}>{storage?.databasePath ?? "…"}</code>
         </div>
-        <div className={styles.row}>
+        <div className={styles.pathBlock}>
           <span>Yedekleme dizini</span>
           <code className={styles.path}>{storage?.backupsPath ?? "…"}</code>
         </div>
