@@ -42,6 +42,7 @@ import {
   type SavedCase,
   type SavedExtraSet,
 } from "./model";
+import { damgaLabelForRate } from "../../shared/historical/laborNet";
 import { getAsgariUcretByDate } from "./asgariUcret";
 import { deleteExtraSet, describeSetsError, listExtraSets, saveExtraSet } from "./extraSetsApi";
 import { clearCorruptCases, deleteCase, loadCasesSafe } from "./storage";
@@ -801,7 +802,7 @@ export default function IsKanunuKidemPage() {
 
     const netRows: string[][] = [
       ["Brüt Kıdem Tazminatı", money(result.brutKidem)],
-      ["Damga Vergisi (Binde 7,59)", `-${money(result.damgaVergisi)}`],
+      [damgaLabelForRate(result.damgaOran), `-${money(result.damgaVergisi)}`],
       ["Toplam Net Kıdem Tazminatı", money(result.netKidem)],
     ];
     sections.push({
@@ -1143,7 +1144,7 @@ export default function IsKanunuKidemPage() {
                 <FlashValue value={`${formatMoney(result.brutKidem)} ₺`} />
               </div>
               <div className={styles.line}>
-                <span>Damga Vergisi (Binde 7,59)</span>
+                <span>{damgaLabelForRate(result.damgaOran)}</span>
                 <span className={styles.deduction}>-{formatMoney(result.damgaVergisi)} ₺</span>
               </div>
               <div className={`${styles.line} ${styles.netLine}`}>

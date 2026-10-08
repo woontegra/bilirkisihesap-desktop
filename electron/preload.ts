@@ -42,6 +42,13 @@ const api: DesktopApi = {
       ipcRenderer.removeListener(IPC_EVENTS.updateStatusChanged, handler);
     };
   },
+  getDesktopAuthView: () => ipcRenderer.invoke(IPC_CHANNELS.desktopAuthView),
+  sendDesktopAuthCode: (kind) => ipcRenderer.invoke(IPC_CHANNELS.desktopAuthSendCode, kind),
+  createDesktopAuthAccount: (input) => ipcRenderer.invoke(IPC_CHANNELS.desktopAuthCreateAccount, input),
+  loginDesktopAuth: (input) => ipcRenderer.invoke(IPC_CHANNELS.desktopAuthLogin, input),
+  logoutDesktopAuth: () => ipcRenderer.invoke(IPC_CHANNELS.desktopAuthLogout),
+  startDesktopAuthReset: (username) => ipcRenderer.invoke(IPC_CHANNELS.desktopAuthForgotStart, username),
+  completeDesktopAuthReset: (input) => ipcRenderer.invoke(IPC_CHANNELS.desktopAuthForgotComplete, input),
 };
 
 contextBridge.exposeInMainWorld("bilirkisiDesktop", api);

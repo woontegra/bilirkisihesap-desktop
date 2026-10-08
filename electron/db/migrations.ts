@@ -50,6 +50,24 @@ export const MIGRATIONS: Migration[] = [
       );
     `,
   },
+  {
+    version: 3,
+    name: "003_local_desktop_user",
+    sql: `
+      CREATE TABLE IF NOT EXISTS yerel_kullanici (
+        id INTEGER PRIMARY KEY,
+        ad_soyad TEXT NOT NULL,
+        kullanici_adi TEXT NOT NULL UNIQUE,
+        eposta TEXT,
+        telefon TEXT,
+        sifre_hash TEXT NOT NULL,
+        guvenlik_sorusu_kodu TEXT NOT NULL,
+        guvenlik_cevap_hash TEXT NOT NULL,
+        aktif_mi INTEGER NOT NULL DEFAULT 1,
+        kayit_tarihi TEXT NOT NULL
+      );
+    `,
+  },
 ];
 
 export function runMigrations(db: Database.Database): void {

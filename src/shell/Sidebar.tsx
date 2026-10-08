@@ -1,4 +1,8 @@
+import { useState } from "react";
 import { NavLink } from "react-router-dom";
+import { LogOut } from "lucide-react";
+import { useDesktopAuth } from "@/auth/DesktopAuthContext";
+import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { useCalculationTools } from "@/context/CalculationToolsContext";
 import logoUrl from "@/assets/logo.png";
 import { dispatchToolAction, NAV_GROUPS, type ToolAction } from "./nav";
@@ -10,6 +14,8 @@ type Props = {
 
 export function Sidebar({ mockLicense }: Props) {
   const tools = useCalculationTools();
+  const auth = useDesktopAuth();
+  const [logoutOpen, setLogoutOpen] = useState(false);
 
   const runToolAction = (action: ToolAction) => {
     dispatchToolAction(action, tools);
@@ -64,8 +70,24 @@ export function Sidebar({ mockLicense }: Props) {
       </nav>
 
       <div className={styles.footer}>
+        <button type="button" className={`${styles.link} ${styles.action}`} onClick={() => setLogoutOpen(true)}>
+          <LogOut size={16} strokeWidth={1.9} />
+          <span className={styles.linkLabel}>Çıkış</span>
+        </button>
         {mockLicense ? <span className={styles.mockBadge}>Mock lisans / geliştirme</span> : null}
       </div>
+      <ConfirmDialog
+        open={logoutOpen}
+        title="Çıkış"
+        description="Çıkış yapmak istediğinize emin misiniz?"
+        confirmLabel="Çıkış"
+        cancelLabel="İptal"
+        onCancel={() => setLogoutOpen(false)}
+        onConfirm={() => {
+          setLogoutOpen(false);
+          void auth.logout();
+        }}
+      />
     </aside>
   );
 }

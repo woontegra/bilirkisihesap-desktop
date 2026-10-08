@@ -31,6 +31,15 @@ import {
   installUpdate,
 } from "./update/updateService";
 import type { UpdateCheckSource } from "../shared/updateTypes";
+import { requireDesktopSession } from "./auth/desktopUserSession";
+import {
+  completeDesktopPasswordReset,
+  createDesktopAccount,
+  getDesktopAuthView,
+  loginDesktopAccount,
+  logoutDesktopAccount,
+  startDesktopPasswordReset,
+} from "./auth/desktopAuthApi";
 
 type AppInfoInput = {
   name: string;
@@ -67,7 +76,10 @@ export function registerIpcHandlers(licenseClient: LicenseClient, appInfo: AppIn
   });
   ipcMain.handle(IPC_CHANNELS.startTrial, async (_event, payload: unknown) => {
     const record = asRecord(payload);
-    const body: LicenseTrialPayload = { email: String(record.email ?? "") };
+    const body: LicenseTrialPayload = {
+      email: String(record.email ?? ""),
+      phone: String(record.phone ?? ""),
+    };
     return licenseClientRef.startTrial(body);
   });
   ipcMain.handle(IPC_CHANNELS.refreshLicense, async () => licenseClientRef.refresh());
@@ -77,7 +89,7 @@ export function registerIpcHandlers(licenseClient: LicenseClient, appInfo: AppIn
   ipcMain.handle(IPC_CHANNELS.openDesktopPurchase, async () => openDesktopFirstPurchase());
   ipcMain.handle(IPC_CHANNELS.openDesktopRenewal, async () => openDesktopRenewal());
   ipcMain.handle(IPC_CHANNELS.openDesktopContact, async () => openDesktopContact());
-  ipcMain.handle(IPC_CHANNELS.getStorageInfo, async () => getDesktopStorageInfo());
+  ipcMain.handle(IPC_CHANNELS.getStorageInfo, async () => wrap(() => getDesktopStorageInfo()));
 
   ipcMain.handle(IPC_CHANNELS.listCalculationRecords, async () => wrap(() => listCalculationRecords()));
   ipcMain.handle(IPC_CHANNELS.getCalculationRecord, async (_event, id: unknown) =>
@@ -157,6 +169,54 @@ export function registerIpcHandlers(licenseClient: LicenseClient, appInfo: AppIn
   ipcMain.handle(IPC_CHANNELS.updateDismiss, () => {
     dismissUpdatePrompt();
   });
+
+  ipcMain.handle(IPC_CHANNELS.desktopAuthView, () => getDesktopAuthView(licenseClientRef));
+  ipcMain.handle(IPC_CHANNELS.desktopAuthSendCode, async () =>
+    wrap(async () => {
+      throw new AppError("Hesap doğrulama kodu kullanılmıyor. Giriş bu bilgisayardaki parolayla yapılır.");
+    }, IPC_CHANNELS.desktopAuthSendCode),
+  );
+  ipcMain.handle(IPC_CHANNELS.desktopAuthCreateAccount, async (_event, payload: unknown) =>
+    wrap(async () => {
+      const record = asRecord(payload);
+      await createDesktopAccount({
+        fullName: String(record.fullName ?? ""),
+        email: String(record.email ?? record.username ?? ""),
+        phone: String(record.phone ?? ""),
+        password: String(record.password ?? ""),
+        securityQuestion: String(record.securityQuestion ?? ""),
+        securityAnswer: String(record.securityAnswer ?? ""),
+      });
+      return { username: String(record.email ?? record.username ?? "") };
+    }, IPC_CHANNELS.desktopAuthCreateAccount),
+  );
+  ipcMain.handle(IPC_CHANNELS.desktopAuthLogin, async (_event, payload: unknown) =>
+    wrap(async () => {
+      const record = asRecord(payload);
+      await loginDesktopAccount(licenseClientRef, String(record.username ?? ""), String(record.password ?? ""));
+      return { username: String(record.username ?? "") };
+    }, IPC_CHANNELS.desktopAuthLogin),
+  );
+  ipcMain.handle(IPC_CHANNELS.desktopAuthLogout, async () =>
+    wrap(async () => {
+      await logoutDesktopAccount();
+      return { signedOut: true as const };
+    }, IPC_CHANNELS.desktopAuthLogout),
+  );
+  ipcMain.handle(IPC_CHANNELS.desktopAuthForgotStart, async (_event, username: unknown) =>
+    wrap(() => startDesktopPasswordReset(String(username ?? "")), IPC_CHANNELS.desktopAuthForgotStart),
+  );
+  ipcMain.handle(IPC_CHANNELS.desktopAuthForgotComplete, async (_event, payload: unknown) =>
+    wrap(async () => {
+      const record = asRecord(payload);
+      await completeDesktopPasswordReset({
+        username: String(record.username ?? ""),
+        securityAnswer: String(record.securityAnswer ?? ""),
+        newPassword: String(record.newPassword ?? ""),
+      });
+      return { reset: true as const };
+    }, IPC_CHANNELS.desktopAuthForgotComplete),
+  );
 }
 
 async function assertCanWrite(): Promise<void> {
@@ -185,8 +245,20 @@ function asRecord(value: unknown): Record<string, unknown> {
   return {};
 }
 
-async function wrap<T>(fn: () => T | Promise<T>): Promise<IpcResult<T>> {
+const OPEN_WITHOUT_SESSION = new Set<string>([
+  IPC_CHANNELS.desktopAuthSendCode,
+  IPC_CHANNELS.desktopAuthCreateAccount,
+  IPC_CHANNELS.desktopAuthLogin,
+  IPC_CHANNELS.desktopAuthLogout,
+  IPC_CHANNELS.desktopAuthForgotStart,
+  IPC_CHANNELS.desktopAuthForgotComplete,
+]);
+
+async function wrap<T>(fn: () => T | Promise<T>, channel?: string): Promise<IpcResult<T>> {
   try {
+    if (!channel || !OPEN_WITHOUT_SESSION.has(channel)) {
+      requireDesktopSession(licenseClientRef);
+    }
     return { ok: true, data: await fn() };
   } catch (error) {
     return { ok: false, message: toUserMessage(error) };

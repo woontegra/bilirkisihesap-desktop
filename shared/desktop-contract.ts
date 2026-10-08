@@ -30,6 +30,13 @@ export const IPC_CHANNELS = {
   updateDownload: "desktop:update-download",
   updateInstall: "desktop:update-install",
   updateDismiss: "desktop:update-dismiss",
+  desktopAuthView: "desktop:auth-view",
+  desktopAuthSendCode: "desktop:auth-send-code",
+  desktopAuthCreateAccount: "desktop:auth-create-account",
+  desktopAuthLogin: "desktop:auth-login",
+  desktopAuthLogout: "desktop:auth-logout",
+  desktopAuthForgotStart: "desktop:auth-forgot-start",
+  desktopAuthForgotComplete: "desktop:auth-forgot-complete",
 } as const;
 
 export const IPC_EVENTS = {
@@ -150,6 +157,26 @@ export type LicenseActivatePayload = {
 
 export type LicenseTrialPayload = {
   email: string;
+  phone?: string;
+};
+
+export type DesktopAuthView = {
+  mock: boolean;
+  signedIn: boolean;
+  step: "app" | "choose" | "login" | "local-setup" | "blocked";
+  licenseKind: "paid" | "trial" | "none";
+  maskedEmail: string | null;
+  message: string | null;
+  username: string | null;
+};
+
+export type LocalAccountPayload = {
+  fullName: string;
+  email: string;
+  phone?: string;
+  password: string;
+  securityQuestion: string;
+  securityAnswer: string;
 };
 
 export type IpcResult<T> = { ok: true; data: T } | { ok: false; message: string };
@@ -273,4 +300,16 @@ export type DesktopApi = {
   updateInstall: () => Promise<UpdateActionResult>;
   updateDismiss: () => Promise<void>;
   onUpdateStatusChanged: (listener: (status: UpdateStatusSnapshot) => void) => () => void;
+  getDesktopAuthView: () => Promise<DesktopAuthView>;
+  sendDesktopAuthCode: (kind: "paid" | "trial") => Promise<IpcResult<{ maskedEmail: string | null }>>;
+  createDesktopAuthAccount: (input: LocalAccountPayload) => Promise<IpcResult<{ username: string }>>;
+  loginDesktopAuth: (input: { username: string; password: string }) => Promise<IpcResult<{ username: string }>>;
+  logoutDesktopAuth: () => Promise<IpcResult<{ signedOut: true }>>;
+  startDesktopAuthReset: (username: string) => Promise<IpcResult<{ securityQuestion: string }>>;
+  completeDesktopAuthReset: (input: {
+    username: string;
+    securityAnswer: string;
+    newPassword: string;
+    code?: string;
+  }) => Promise<IpcResult<{ reset: true }>>;
 };

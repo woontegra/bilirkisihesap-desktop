@@ -89,8 +89,12 @@ export class CentralLicenseClient implements LicenseClient {
 
   async startTrial(payload: LicenseTrialPayload): Promise<IpcResult<DesktopLicenseStatus>> {
     const email = payload.email.trim().toLowerCase();
+    const phone = (payload.phone ?? "").trim();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return { ok: false, message: "Geçerli bir e-posta adresi girin." };
+    }
+    if (!phone) {
+      return { ok: false, message: "Geçerli bir Türkiye cep telefonu girin." };
     }
     const platform = getEntitlementPlatform();
     if (!platform) {
@@ -104,6 +108,7 @@ export class CentralLicenseClient implements LicenseClient {
         {
           appCode: LICENSE_APP_CODE,
           email,
+          phone,
           deviceHash,
           platform,
           deviceName: getDeviceName(),
@@ -301,7 +306,7 @@ export class CentralLicenseClient implements LicenseClient {
         state: "expired",
         isOfflineGrace: false,
         offlineGraceUntil: null,
-        message: "7 günlük ücretsiz deneme süreniz sona erdi.",
+        message: "Deneme süreniz sona ermiştir. Devam etmek için lisans satın alabilirsiniz.",
       });
     }
     try {
@@ -322,7 +327,7 @@ export class CentralLicenseClient implements LicenseClient {
           isOfflineGrace: false,
           offlineGraceUntil: null,
           message: expired
-            ? "7 günlük ücretsiz deneme süreniz sona erdi."
+            ? "Deneme süreniz sona ermiştir. Devam etmek için lisans satın alabilirsiniz."
             : userMessageForState(mapServerMessageToState(out.message) ?? "revoked", out.message),
         });
       }

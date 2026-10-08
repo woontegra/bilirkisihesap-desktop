@@ -14,6 +14,7 @@ export default defineConfig({
     environment: "node",
     include: [
       "electron/license/*.test.ts",
+      "electron/auth/*.test.ts",
       "electron/security/*.test.ts",
       "electron/kidem/*.test.ts",
       "electron/icra/*.test.ts",

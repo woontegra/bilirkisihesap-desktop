@@ -1,4 +1,6 @@
 import { HashRouter, Navigate, Route, Routes } from "react-router-dom";
+import { DesktopAuthProvider, useDesktopAuth } from "./auth/DesktopAuthContext";
+import { DesktopLoginScreen } from "./auth/DesktopLoginScreen";
 import { CalculationToolsProvider } from "./context/CalculationToolsContext";
 import { UpdateStatusProvider } from "./update/UpdateStatusContext";
 import { LicenseGate } from "./license/LicenseGate";
@@ -73,6 +75,23 @@ export function App() {
   return (
     <HashRouter>
       <UpdateStatusProvider>
+        <DesktopAuthProvider>
+          <AuthSwitch />
+        </DesktopAuthProvider>
+      </UpdateStatusProvider>
+    </HashRouter>
+  );
+}
+
+function AuthSwitch() {
+  const auth = useDesktopAuth();
+  if (auth.loading) {
+    return <div style={{ minHeight: "100vh", background: "#030810" }} />;
+  }
+  if (!auth.signedIn) {
+    return <DesktopLoginScreen />;
+  }
+  return (
         <CalculationToolsProvider>
           <Routes>
             <Route element={<AppShell />}>
@@ -152,7 +171,5 @@ export function App() {
             </Route>
           </Routes>
         </CalculationToolsProvider>
-      </UpdateStatusProvider>
-    </HashRouter>
   );
 }

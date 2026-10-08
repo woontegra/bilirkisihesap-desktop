@@ -62,6 +62,15 @@ describe("Bilirkişi UBGT görünümü", () => {
       },
       hakkaniyet: 0,
       settleNum: 0,
+      sonBrutAlacak: 4000,
+      equityNet: {
+        sgk: 0,
+        issizlik: 0,
+        gelirVergisi: 0,
+        gelirVergisiDilimleri: "",
+        damgaVergisi: 0,
+        net: 4000,
+      },
     });
     const cetvel = sections.find((section) => section.id === "ubgt-hesaplama-cetveli");
     expect(cetvel?.headers).toEqual([

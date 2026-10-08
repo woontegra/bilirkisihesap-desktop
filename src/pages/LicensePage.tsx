@@ -44,7 +44,7 @@ function remainingLabel(expiresAt: string | null): string {
   if (Number.isNaN(diff)) {
     return "—";
   }
-  return `${Math.ceil(diff / (24 * 60 * 60 * 1000))} gün`;
+  return `${Math.max(0, Math.ceil(diff / (24 * 60 * 60 * 1000)))} gün`;
 }
 
 export function LicensePage() {
@@ -53,6 +53,7 @@ export function LicensePage() {
   const [licenseKey, setLicenseKey] = useState("");
   const [password, setPassword] = useState("");
   const [trialEmail, setTrialEmail] = useState("");
+  const [trialPhone, setTrialPhone] = useState("");
   const [busy, setBusy] = useState(false);
   const [formMessage, setFormMessage] = useState<string | null>(null);
   const [trialFailure, setTrialFailure] = useState<string | null>(null);
@@ -107,7 +108,7 @@ export function LicensePage() {
     setBusy(true);
     setFormMessage(null);
     try {
-      const result = await api.startTrial({ email: trialEmail });
+      const result = await api.startTrial({ email: trialEmail, phone: trialPhone });
       if (!result.ok) {
         setTrialFailure(presentTrialFailure(result.message).message);
         return;
@@ -248,6 +249,16 @@ export function LicensePage() {
                 autoComplete="email"
               />
             </label>
+            <label className={styles.row}>
+              <span>Cep telefonu</span>
+              <input
+                className={styles.input}
+                type="tel"
+                value={trialPhone}
+                onChange={(event) => setTrialPhone(event.target.value)}
+                autoComplete="tel"
+              />
+            </label>
           </div>
           <div className={styles.toolbar}>
             <button type="button" className={styles.button} disabled={busy} onClick={() => void startTrial()}>
@@ -260,7 +271,7 @@ export function LicensePage() {
             </p>
           ) : (
             <p className={styles.note}>
-              Deneme lisansı anahtar istemez. Süre lisans sunucusundaki bitiş tarihine göredir ve çevrimdışı uzamaz.
+              Deneme bu cihazda başlar. Süre başarılı başlangıçtan itibaren 7 gündür ve çevrimdışı uzamaz.
             </p>
           )}
         </section>

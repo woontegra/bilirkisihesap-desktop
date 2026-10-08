@@ -10,6 +10,7 @@ import { PAGE_TITLES } from "./nav";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
 import { UpdatePromptHost } from "../update/UpdatePromptHost";
+import { WageInputGuard } from "../hooks/useDeferredFormMemo";
 import styles from "./AppShell.module.css";
 
 export type DesktopRuntime = {
@@ -104,7 +105,13 @@ export function AppShell() {
         <Topbar title={title} version={topMeta.version} osLabel={topMeta.os} />
         <main className={styles.content}>
           <div className={styles.inner}>
-            {error ? <p>{error}</p> : <Outlet context={runtime} />}
+            {error ? (
+              <p>{error}</p>
+            ) : (
+              <WageInputGuard resetKey={location.pathname}>
+                <Outlet context={runtime} />
+              </WageInputGuard>
+            )}
           </div>
         </main>
       </div>
