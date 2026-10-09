@@ -34,8 +34,8 @@ function main() {
   console.log("[test:updater] başlıyor…");
 
   const pkg = readPackageJson();
-  assert.equal(pkg.version, "3.6.5");
-  ok("package.json version = 3.6.5");
+  assert.equal(pkg.version, "3.6.7");
+  ok("package.json version = 3.6.7");
 
   assert.equal(pkg.build?.appId, "com.woontegra.bilirkisihesap");
   ok("appId = com.woontegra.bilirkisihesap");
@@ -77,8 +77,8 @@ function main() {
   assert.equal(pkg.build?.nsis?.deleteAppDataOnUninstall, false);
   ok("NSIS deleteAppDataOnUninstall = false");
 
-  assert.equal(expectedSetupName("3.6.5"), "Bilirkisi-Hesap-Setup-3.6.5.exe");
-  ok("expectedSetupName(3.6.5)");
+  assert.equal(expectedSetupName("3.6.7"), "Bilirkisi-Hesap-Setup-3.6.7.exe");
+  ok("expectedSetupName(3.6.7)");
 
   assert.ok(pkg.dependencies?.["electron-updater"]);
   assert.ok(pkg.dependencies?.["electron-log"]);
@@ -115,6 +115,17 @@ function main() {
   assert.ok(!service.includes(WIN_FEED));
   assert.ok(service.includes("Windows güncelleme feed URL yapılandırılamadı."));
   ok("updateService: packaged-only, win32+darwin feed, backup-before-install");
+
+  assert.ok(service.includes("setInterval(runPeriodicCheck, PERIODIC_CHECK_MS)"));
+  const periodicBody = service.slice(service.indexOf("function runPeriodicCheck"), service.indexOf("export function scheduleAutoUpdateCheck"));
+  assert.ok(periodicBody.includes("downloadInProgress || showPrompt"));
+  assert.ok(periodicBody.includes('checkForUpdates("auto")'));
+  assert.ok(!periodicBody.includes("downloadUpdate") && !periodicBody.includes("quitAndInstall"));
+  const appTsx = read("src/App.tsx");
+  const providerBody = appTsx.slice(appTsx.indexOf("<UpdateStatusProvider>"), appTsx.indexOf("</UpdateStatusProvider>"));
+  assert.ok(providerBody.includes("<UpdatePromptHost />"));
+  assert.ok(!read("src/shell/AppShell.tsx").includes("UpdatePromptHost"));
+  ok("açık uygulamada periyodik kontrol; bildirim giriş ekranında da kök bileşende");
 
   // Backup failure must block quitAndInstall: backup fail path precedes quitAndInstall
   const installIdx = service.indexOf("export async function installUpdate");
@@ -157,17 +168,17 @@ function main() {
   // Metadata consistency with a fake artifact outside the real release folder
   const scratch = path.join(os.tmpdir(), "bilirkisi-updater-selftest");
   fs.mkdirSync(scratch, { recursive: true });
-  const tmpExe = path.join(scratch, "Bilirkisi-Hesap-Setup-3.6.5.exe");
+  const tmpExe = path.join(scratch, "Bilirkisi-Hesap-Setup-3.6.7.exe");
   const payload = Buffer.from(`bilirkisi-fake-signed-exe-${Date.now()}-${crypto.randomBytes(8).toString("hex")}`);
   fs.writeFileSync(tmpExe, payload);
   const sha = calculateSha512Base64(tmpExe);
   const size = payload.length;
   // Fake blockmap presence for verify
   fs.writeFileSync(`${tmpExe}.blockmap`, Buffer.from("fake-blockmap"));
-  const latest = writeLatestYml(path.basename(tmpExe), "3.6.5", sha, size, scratch);
+  const latest = writeLatestYml(path.basename(tmpExe), "3.6.7", sha, size, scratch);
   const yml = parseLatestYml(fs.readFileSync(latest, "utf8"));
-  assert.equal(yml.version, "3.6.5");
-  assert.equal(yml.path, "Bilirkisi-Hesap-Setup-3.6.5.exe");
+  assert.equal(yml.version, "3.6.7");
+  assert.equal(yml.path, "Bilirkisi-Hesap-Setup-3.6.7.exe");
   assert.equal(yml.sha512, sha);
   assert.equal(yml.fileSha512, sha);
   assert.equal(yml.fileSize, size);

@@ -3,6 +3,7 @@ import { DesktopAuthProvider, useDesktopAuth } from "./auth/DesktopAuthContext";
 import { DesktopLoginScreen } from "./auth/DesktopLoginScreen";
 import { CalculationToolsProvider } from "./context/CalculationToolsContext";
 import { UpdateStatusProvider } from "./update/UpdateStatusContext";
+import { UpdatePromptHost } from "./update/UpdatePromptHost";
 import { LicenseGate } from "./license/LicenseGate";
 import { AppShell } from "./shell/AppShell";
 import { HomePage } from "./pages/HomePage";
@@ -78,6 +79,7 @@ export function App() {
         <DesktopAuthProvider>
           <AuthSwitch />
         </DesktopAuthProvider>
+        <UpdatePromptHost />
       </UpdateStatusProvider>
     </HashRouter>
   );

@@ -44,10 +44,11 @@ function bumpPatchVersion(log = console.log) {
   log(`Mevcut sürüm: ${before}`);
   log("Patch sürüm artırılıyor (npm version patch --no-git-tag-version)…");
 
-  const r = spawnSync("npm.cmd", ["version", "patch", "--no-git-tag-version"], {
+  const isWin = process.platform === "win32";
+  const r = spawnSync(isWin ? "npm.cmd" : "npm", ["version", "patch", "--no-git-tag-version"], {
     cwd: ROOT,
     stdio: "inherit",
-    shell: true,
+    shell: isWin,
     env: process.env,
   });
 

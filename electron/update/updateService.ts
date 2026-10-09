@@ -451,7 +451,17 @@ export async function installUpdate(): Promise<UpdateActionResult> {
   }
 }
 
-/** Ana pencere yüklendikten sonra bir kez otomatik kontrol planla. */
+const PERIODIC_CHECK_MS = 4 * 60 * 60 * 1000;
+
+/** Tekrar kontrol; bulunmuş, ertelenmiş ya da indirilen bir güncellemenin durumunu bozmaz. */
+function runPeriodicCheck(): void {
+  const { state, showPrompt } = currentStatus();
+  if (downloadInProgress || showPrompt) return;
+  if (!(state === "idle" || state === "not-available" || state === "error")) return;
+  void checkForUpdates("auto");
+}
+
+/** Ana pencere yüklendikten sonra otomatik kontrol; uygulama açık kaldıkça periyodik tekrarlanır. */
 export function scheduleAutoUpdateCheck(delayMs = 5000): void {
   if (autoCheckScheduled) return;
   autoCheckScheduled = true;
@@ -462,6 +472,7 @@ export function scheduleAutoUpdateCheck(delayMs = 5000): void {
     if (autoCheckDone) return;
     autoCheckDone = true;
     void checkForUpdates("auto");
+    setInterval(runPeriodicCheck, PERIODIC_CHECK_MS);
   }, delayMs);
 }
 
