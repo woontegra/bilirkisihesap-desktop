@@ -1,6 +1,6 @@
 {
   "name": "bilirkisi-desktop",
-  "version": "3.6.4",
+  "version": "3.6.5",
   "private": true,
   "description": "Bilirkişi Hesap bağımsız Windows/macOS masaüstü uygulaması",
   "author": "Woontegra",
@@ -78,7 +78,7 @@
         "dmg",
         "zip"
       ],
-      "artifactName": "${productName}-${version}-mac-${arch}.${ext}",
+      "artifactName": "Bilirkisi-Hesap-${version}-mac-${arch}.${ext}",
       "category": "public.app-category.business",
       "icon": "build/icon.icns",
       "publish": [

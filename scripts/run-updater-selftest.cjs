@@ -34,8 +34,8 @@ function main() {
   console.log("[test:updater] başlıyor…");
 
   const pkg = readPackageJson();
-  assert.equal(pkg.version, "3.6.4");
-  ok("package.json version = 3.6.4");
+  assert.equal(pkg.version, "3.6.5");
+  ok("package.json version = 3.6.5");
 
   assert.equal(pkg.build?.appId, "com.woontegra.bilirkisihesap");
   ok("appId = com.woontegra.bilirkisihesap");
@@ -54,6 +54,7 @@ function main() {
   assert.ok(pkg.build?.mac?.target?.includes("zip"));
   assert.ok(pkg.build?.mac?.target?.includes("dmg"));
   assert.equal(pkg.build?.mac?.icon, "build/icon.icns");
+  assert.equal(pkg.build?.mac?.artifactName, "Bilirkisi-Hesap-${version}-mac-${arch}.${ext}");
   assert.equal(pkg.build?.mac?.identity, undefined);
   assert.equal(pkg.build?.productName, "Bilirkişi Hesap");
   assert.equal(pkg.build?.nsis?.shortcutName, "Bilirkişi Hesap");
@@ -65,7 +66,7 @@ function main() {
     "Electron Helper (GPU)",
   );
   assert.equal(macNames.electronHelperName("Bilirkişi Hesap Helper.app", "Bilirkişi Hesap"), "Electron Helper");
-  ok("mac.publish = macOS feed; zip+dmg ve icon.icns korunuyor; imza ayarı eklenmedi");
+  ok("mac.publish = macOS feed; zip+dmg ASCII adla, icon.icns korunuyor; imza ayarı eklenmedi");
 
   assert.equal(pkg.build?.win?.signExecutable, false);
   assert.notEqual(pkg.build?.win?.signAndEditExecutable, false);
@@ -76,8 +77,8 @@ function main() {
   assert.equal(pkg.build?.nsis?.deleteAppDataOnUninstall, false);
   ok("NSIS deleteAppDataOnUninstall = false");
 
-  assert.equal(expectedSetupName("3.6.4"), "Bilirkisi-Hesap-Setup-3.6.4.exe");
-  ok("expectedSetupName(3.6.4)");
+  assert.equal(expectedSetupName("3.6.5"), "Bilirkisi-Hesap-Setup-3.6.5.exe");
+  ok("expectedSetupName(3.6.5)");
 
   assert.ok(pkg.dependencies?.["electron-updater"]);
   assert.ok(pkg.dependencies?.["electron-log"]);
@@ -156,17 +157,17 @@ function main() {
   // Metadata consistency with a fake artifact outside the real release folder
   const scratch = path.join(os.tmpdir(), "bilirkisi-updater-selftest");
   fs.mkdirSync(scratch, { recursive: true });
-  const tmpExe = path.join(scratch, "Bilirkisi-Hesap-Setup-3.6.4.exe");
+  const tmpExe = path.join(scratch, "Bilirkisi-Hesap-Setup-3.6.5.exe");
   const payload = Buffer.from(`bilirkisi-fake-signed-exe-${Date.now()}-${crypto.randomBytes(8).toString("hex")}`);
   fs.writeFileSync(tmpExe, payload);
   const sha = calculateSha512Base64(tmpExe);
   const size = payload.length;
   // Fake blockmap presence for verify
   fs.writeFileSync(`${tmpExe}.blockmap`, Buffer.from("fake-blockmap"));
-  const latest = writeLatestYml(path.basename(tmpExe), "3.6.4", sha, size, scratch);
+  const latest = writeLatestYml(path.basename(tmpExe), "3.6.5", sha, size, scratch);
   const yml = parseLatestYml(fs.readFileSync(latest, "utf8"));
-  assert.equal(yml.version, "3.6.4");
-  assert.equal(yml.path, "Bilirkisi-Hesap-Setup-3.6.4.exe");
+  assert.equal(yml.version, "3.6.5");
+  assert.equal(yml.path, "Bilirkisi-Hesap-Setup-3.6.5.exe");
   assert.equal(yml.sha512, sha);
   assert.equal(yml.fileSha512, sha);
   assert.equal(yml.fileSize, size);
