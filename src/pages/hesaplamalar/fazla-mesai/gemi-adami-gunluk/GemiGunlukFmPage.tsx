@@ -497,7 +497,7 @@ export default function GemiGunlukFmPage() {
       setShowCaseSaveModal(false);
       setSaveFlash(true);
       window.setTimeout(() => setSaveFlash(false), 700);
-      toast.success(wasUpdate ? "Kayıt güncellendi" : "Kayıt oluşturuldu");
+      toast.success(wasUpdate ? "Hesaplama güncellendi" : "Kayıt oluşturuldu");
     } catch (error: unknown) {
       const message =
         error instanceof ApiError ? error.message : error instanceof Error ? error.message : "Kayıt başarısız";

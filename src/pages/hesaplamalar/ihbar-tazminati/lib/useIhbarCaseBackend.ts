@@ -194,7 +194,7 @@ export function useIhbarCaseBackend<TForm, TSaved extends { id: string; name: st
         setCaseIdParam(recordId);
         backendLoadedCaseIdRef.current = recordId;
         await reloadCases();
-        success(wasUpdate ? "Kayıt güncellendi" : "Kayıt kaydedildi");
+        success(wasUpdate ? "Hesaplama güncellendi" : "Kayıt kaydedildi");
         setNameOpen(false);
         return true;
       } catch (error) {

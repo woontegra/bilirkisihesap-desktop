@@ -216,7 +216,7 @@ export function useYillikCaseBackend<TForm, TSaved extends { id: string; name: s
         setCaseIdParam(recordId);
         backendLoadedCaseIdRef.current = recordId;
         await reloadCases();
-        success(wasUpdate ? "Kayıt güncellendi" : "Kayıt kaydedildi");
+        success(wasUpdate ? "Hesaplama güncellendi" : "Kayıt kaydedildi");
         setNameOpen(false);
         return true;
       } catch (error) {

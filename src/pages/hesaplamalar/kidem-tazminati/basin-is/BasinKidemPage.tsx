@@ -603,7 +603,7 @@ export default function BasinKidemPage() {
       setSaveFlash(true);
       window.setTimeout(() => setSaveFlash(false), 700);
       await reloadCases();
-      toast.success(wasUpdate ? "Kayıt güncellendi" : "Kayıt oluşturuldu");
+      toast.success(wasUpdate ? "Hesaplama güncellendi" : "Kayıt oluşturuldu");
     } catch (error) {
       const message =
         error instanceof ApiError

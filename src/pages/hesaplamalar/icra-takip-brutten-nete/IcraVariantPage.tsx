@@ -362,7 +362,7 @@ export default function IcraVariantPage({ variant, title, backTo = "/icra-takip-
         backendLoadedCaseIdRef.current = recordId;
         setNameOpen(false);
         await reloadCases();
-        success(wasUpdate ? "Kayıt güncellendi" : "Kayıt kaydedildi");
+        success(wasUpdate ? "Hesaplama güncellendi" : "Kayıt kaydedildi");
       } catch (error) {
         showError(
           error instanceof ApiError

@@ -600,7 +600,7 @@ export function HaftaTatiliCalcPage<TForm extends HaftaTatiliBaseForm>({ config 
         backendLoadedCaseIdRef.current = recordId;
         setNameOpen(false);
         await reloadCases();
-        success(wasUpdate ? "Kayıt güncellendi" : "Kayıt kaydedildi");
+        success(wasUpdate ? "Hesaplama güncellendi" : "Kayıt kaydedildi");
       } catch (error) {
         showError(
           error instanceof ApiError

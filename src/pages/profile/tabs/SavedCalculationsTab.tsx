@@ -439,7 +439,7 @@ export default function SavedCalculationsTab() {
         name: trimmed,
         type: item.type || "",
         data: item.data,
-      }, { promptFolder: false });
+      }, { rename: true });
       setCases((prev) => prev.map((c) => (c.id === id ? { ...c, kayit_adi: trimmed } : c)));
       toast.success("Kayıt adı güncellendi");
     } catch (err) {

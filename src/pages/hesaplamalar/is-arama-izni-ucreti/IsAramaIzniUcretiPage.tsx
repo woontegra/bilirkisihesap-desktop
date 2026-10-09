@@ -325,7 +325,7 @@ export default function IsAramaIzniUcretiPage() {
         setCaseIdParam(recordId);
         backendLoadedCaseIdRef.current = recordId;
         await reloadCases();
-        success(wasUpdate ? "Kayıt güncellendi" : "Kayıt kaydedildi");
+        success(wasUpdate ? "Hesaplama güncellendi" : "Kayıt kaydedildi");
         setNameOpen(false);
       } catch (error) {
         showError(

@@ -209,64 +209,79 @@ describe("Güncelle → mevcut klasör korunur", () => {
     return { folder, saved };
   }
 
-  it("pencere mevcut klasörü seçili getirir; onaylanınca klasör aynen kalır ve veriler güncellenir", async () => {
-    const { folder, saved } = await seedInFolder();
-    usePrompt((req) => ({ folderId: req.currentFolderId }));
-    const updated = await updateSavedCase(saved.id, payload("Ayşe prim (düzeltilmiş)", 750));
-    expect(requests).toEqual([{ mode: "update", suggestedName: "Ayşe prim (düzeltilmiş)", currentFolderId: folder.id }]);
-    expect(updated.folderId).toBe(folder.id);
-    const reopened = await getSavedCase(saved.id);
-    expect(reopened.name).toBe("Ayşe prim (düzeltilmiş)");
-    expect(reopened.folderId).toBe(folder.id);
-    expect((reopened.data as { form: { tutar: number } }).form.tutar).toBe(750);
-    expect(fake.bridge.moveCalculationRecordsToFolder).toHaveBeenCalledTimes(1);
-  });
-
-  it("güncellemede pencerede değiştirilen ad kayda yazılır, klasör korunur", async () => {
-    const { folder, saved } = await seedInFolder();
-    usePrompt((req) => ({ name: "Ayşe prim – yeni ad", folderId: req.currentFolderId }));
-    const updated = await updateSavedCase(saved.id, payload("Ayşe prim"));
-    expect(updated.name).toBe("Ayşe prim – yeni ad");
-    expect(updated.folderId).toBe(folder.id);
-  });
-
-  it("güncellemede sayfa ad göndermezse kaydın mevcut adı önerilir", async () => {
-    const { saved } = await seedInFolder();
-    usePrompt((req) => ({ name: req.suggestedName, folderId: req.currentFolderId }));
-    const updated = await updateSavedCase(saved.id, payload(""));
-    expect(requests[0].suggestedName).toBe("Ayşe prim");
-    expect(updated.name).toBe("Ayşe prim");
-  });
-
-  it("kullanıcı güncellerken klasörü değiştirebilir veya Klasörsüz'e alabilir", async () => {
-    const { saved } = await seedInFolder();
-    const other = addFolder("Diğer");
-    usePrompt(() => ({ folderId: other.id }));
-    expect((await updateSavedCase(saved.id, payload("Ayşe prim"))).folderId).toBe(other.id);
-    usePrompt(() => ({ folderId: null }));
-    expect((await updateSavedCase(saved.id, payload("Ayşe prim"))).folderId).toBeNull();
-  });
-
-  it("güncellemede iptal edilirse kayıt adı, verisi ve klasörü değişmez", async () => {
-    const { folder, saved } = await seedInFolder();
-    const before = { ...[...fake.records.values()][0] };
-    usePrompt(() => null);
-    await expect(updateSavedCase(saved.id, payload("Değişmemeli", 999))).rejects.toBeInstanceOf(SaveCancelledError);
-    const after = [...fake.records.values()][0];
-    expect(after).toEqual(before);
-    expect(after.folderId).toBe(folder.id);
-    expect(fake.bridge.updateCalculationRecord).not.toHaveBeenCalled();
-  });
-
-  it("promptFolder:false (yeniden adlandırma/kopya) pencere açmaz ve klasörü korur", async () => {
-    const { folder, saved } = await seedInFolder();
+  function forbidPrompt() {
     usePrompt(() => {
       throw new Error("açılmamalıydı");
     });
-    const renamed = await updateSavedCase(saved.id, payload("Yeni ad"), { promptFolder: false });
+  }
+
+  it("pencere açılmadan aynı ID, ad ve klasörle veriler güncellenir", async () => {
+    const { folder, saved } = await seedInFolder();
+    forbidPrompt();
+    const [{ id: uuid, createdAt }] = [...fake.records.values()];
+    const updated = await updateSavedCase(saved.id, payload("Ayşe prim (sayfadaki ad)", 750));
     expect(requests).toHaveLength(0);
+    expect(updated.id).toBe(saved.id);
+    expect(updated.name).toBe("Ayşe prim");
+    expect(updated.folderId).toBe(folder.id);
+    const reopened = await getSavedCase(saved.id);
+    expect(reopened.name).toBe("Ayşe prim");
+    expect(reopened.folderId).toBe(folder.id);
+    expect((reopened.data as { form: { tutar: number } }).form.tutar).toBe(750);
+    expect(fake.records.size).toBe(1);
+    expect([...fake.records.values()][0]).toMatchObject({ id: uuid, createdAt });
+    expect(fake.bridge.moveCalculationRecordsToFolder).toHaveBeenCalledTimes(1);
+    expect(fake.bridge.createCalculationRecord).toHaveBeenCalledTimes(1);
+  });
+
+  it("art arda güncellemeler yeni kayıt veya klasör açmaz, klasörsüz kayıt klasörsüz kalır", async () => {
+    usePrompt(() => ({ folderId: null }));
+    const saved = await createSavedCase(payload("Klasörsüz kayıt", 100));
+    forbidPrompt();
+    for (const tutar of [200, 300]) {
+      const updated = await updateSavedCase(saved.id, payload("Klasörsüz kayıt", tutar));
+      expect(updated.folderId).toBeNull();
+    }
+    expect(fake.records.size).toBe(1);
+    expect(fake.folders.size).toBe(0);
+    expect(((await getSavedCase(saved.id)).data as { form: { tutar: number } }).form.tutar).toBe(300);
+  });
+
+  it("Kayıtlı Hesaplamalar ekranında yeniden adlandırma adı değiştirir, klasörü korur", async () => {
+    const { folder, saved } = await seedInFolder();
+    forbidPrompt();
+    const renamed = await updateSavedCase(saved.id, payload("Yeni ad"), { rename: true });
+    expect(requests).toHaveLength(0);
+    expect(renamed.name).toBe("Yeni ad");
     expect(renamed.folderId).toBe(folder.id);
+    const afterPageSave = await updateSavedCase(saved.id, payload("Eski sayfa adı", 900));
+    expect(afterPageSave.name).toBe("Yeni ad");
+  });
+
+  it("Kayıtlı Hesaplamalar ekranında taşınan kaydın klasörü sonraki güncellemede korunur", async () => {
+    const { saved } = await seedInFolder();
+    const other = addFolder("Diğer");
+    fake.records.set([...fake.records.keys()][0], { ...[...fake.records.values()][0], folderId: other.id });
+    forbidPrompt();
+    expect((await updateSavedCase(saved.id, payload("Ayşe prim", 800))).folderId).toBe(other.id);
+  });
+
+  it("güncelleme başarısız olursa kaydın adı, verisi ve klasörü değişmez", async () => {
+    const { folder, saved } = await seedInFolder();
+    const before = { ...[...fake.records.values()][0] };
+    forbidPrompt();
+    fake.bridge.updateCalculationRecord.mockResolvedValueOnce(fail("Disk dolu") as never);
+    await expect(updateSavedCase(saved.id, payload("Değişmemeli", 999))).rejects.toThrow("Disk dolu");
+    const after = [...fake.records.values()][0];
+    expect(after).toEqual(before);
+    expect(after.folderId).toBe(folder.id);
+  });
+
+  it("kopya (promptFolder:false) pencere açmaz ve klasörsüz oluşturulur", async () => {
+    await seedInFolder();
+    forbidPrompt();
     const copy = await createSavedCase(payload("Kopya"), { promptFolder: false });
+    expect(requests).toHaveLength(0);
     expect(copy.folderId).toBeNull();
   });
 
@@ -290,21 +305,27 @@ describe("ortak hesaplama kayıt fabrikası", () => {
     buildSaveData: (form, result) => ({ form, formValues: form, results: result }),
   });
 
-  it("Kaydet seçilen klasöre yazar, kayıt açılır ve Güncelle mevcut klasörü korur", async () => {
+  it("Kaydet pencereyle seçilen klasöre yazar, kayıt açılır ve Güncelle pencere açmadan aynı kaydı günceller", async () => {
     const folder = addFolder("Ahmet Y. Dosyası");
-    usePrompt(() => ({ folderId: folder.id }));
+    usePrompt((req) => ({ name: `${req.suggestedName} – dosya`, folderId: folder.id }));
     const created = await crud.saveCase("Ahmet prim", { tutar: 100 }, { brut: 100, net: 80 });
+    expect(requests).toEqual([{ mode: "create", suggestedName: "Ahmet prim", currentFolderId: null }]);
     expect(created.folderId).toBe(folder.id);
+    expect(created.name).toBe("Ahmet prim – dosya");
 
     const { record, form } = await crud.loadCase(created.id);
     expect(form).toEqual({ tutar: 100 });
     expect(record.folderId).toBe(folder.id);
 
-    usePrompt((req) => ({ folderId: req.currentFolderId }));
-    const updated = await crud.saveCase("Ahmet prim", { tutar: 150 }, { brut: 150, net: 120 }, String(created.id));
+    usePrompt(() => {
+      throw new Error("açılmamalıydı");
+    });
+    const updated = await crud.saveCase(String(record.name), { tutar: 150 }, { brut: 150, net: 120 }, String(created.id));
+    expect(requests).toHaveLength(1);
     expect(updated.id).toBe(created.id);
+    expect(updated.name).toBe("Ahmet prim – dosya");
     expect(updated.folderId).toBe(folder.id);
-    expect(requests.at(-1)).toMatchObject({ mode: "update", currentFolderId: folder.id });
+    expect((await crud.loadCase(created.id)).form).toEqual({ tutar: 150 });
 
     const list = await listSavedCases();
     expect(list).toHaveLength(1);

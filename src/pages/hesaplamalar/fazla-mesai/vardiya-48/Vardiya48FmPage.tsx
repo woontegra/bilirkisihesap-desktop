@@ -491,7 +491,7 @@ export default function Vardiya48FmPage() {
       setShowCaseSaveModal(false);
       setSaveFlash(true);
       window.setTimeout(() => setSaveFlash(false), 900);
-      toast.success(wasUpdate ? "Kayıt güncellendi" : "Kayıt kaydedildi");
+      toast.success(wasUpdate ? "Hesaplama güncellendi" : "Kayıt kaydedildi");
     } catch (error: unknown) {
       const message =
         error instanceof ApiError ? error.message : error instanceof Error ? error.message : "Kayıt kaydedilemedi";

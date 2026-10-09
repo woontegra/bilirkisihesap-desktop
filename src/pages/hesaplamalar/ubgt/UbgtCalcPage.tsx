@@ -727,7 +727,7 @@ export default function UbgtCalcPage({ mode, title }: Props) {
       setImportedFromV3(false);
       setV3SourceCaseId(null);
       await reloadCases();
-      success(wasUpdate ? "Kayıt güncellendi" : "Kayıt kaydedildi");
+      success(wasUpdate ? "Hesaplama güncellendi" : "Kayıt kaydedildi");
     } catch (error) {
       showError(
         error instanceof ApiError

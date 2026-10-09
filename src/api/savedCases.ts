@@ -38,8 +38,14 @@ export type UpdateSavedCasePayload = {
   data: unknown;
 };
 
-/** promptFolder: false → klasör sorulmaz; yeni kayıt klasörsüz, güncellenen kayıt mevcut klasöründe kalır. */
+/** promptFolder: false → klasör sorulmaz; yeni kayıt klasörsüz oluşturulur. */
 export type SaveCaseOptions = { promptFolder?: boolean };
+
+/**
+ * Güncelleme pencere açmaz; kayıt kimliği ve klasörü her zaman korunur.
+ * rename: true → yalnız Kayıtlı Hesaplamalar ekranındaki ad değişikliği; aksi halde mevcut ad korunur.
+ */
+export type UpdateSavedCaseOptions = { rename?: boolean };
 
 const MAP_KEY = "saved-case-numeric-ids";
 const LEGACY_MAP_KEY = "kidem-is-kanunu-numeric-ids";
@@ -151,14 +157,9 @@ export async function getSavedCase(id: number): Promise<SavedCaseRecord> {
   return toSavedCaseRecord(record, id);
 }
 
-async function askFolder(
-  mode: "create" | "update",
-  suggestedName: string,
-  currentFolderId: string | null,
-  options?: SaveCaseOptions,
-): Promise<SaveFolderChoice> {
-  if (options?.promptFolder === false) return { name: suggestedName, folderId: currentFolderId };
-  const choice = await requestSaveFolder({ mode, suggestedName, currentFolderId });
+async function askFolder(suggestedName: string, options?: SaveCaseOptions): Promise<SaveFolderChoice> {
+  if (options?.promptFolder === false) return { name: suggestedName, folderId: null };
+  const choice = await requestSaveFolder({ mode: "create", suggestedName, currentFolderId: null });
   if (!choice) throw new SaveCancelledError();
   return choice;
 }
@@ -201,7 +202,7 @@ export async function createSavedCase(
 ): Promise<SavedCaseRecord> {
   const data = (payload.data ?? {}) as Record<string, unknown>;
   const form = (data.form ?? data.formValues ?? {}) as Record<string, unknown>;
-  const choice = await askFolder("create", payload.name.trim(), null, options);
+  const choice = await askFolder(payload.name.trim(), options);
   const title = choice.name?.trim() || payload.name.trim() || autoTitle(payload.type, form);
   const { folderId, createdFolderId } = await resolveFolderChoice(choice);
   let created: CalculationRecord;
@@ -227,34 +228,22 @@ export async function createSavedCase(
 export async function updateSavedCase(
   id: number,
   payload: UpdateSavedCasePayload,
-  options?: SaveCaseOptions,
+  options?: UpdateSavedCaseOptions,
 ): Promise<SavedCaseRecord> {
   const uuid = await uuidFromNumeric(id);
   const data = (payload.data ?? {}) as Record<string, unknown>;
   const form = (data.form ?? data.formValues ?? {}) as Record<string, unknown>;
-  let title = payload.name.trim() || autoTitle(payload.type, form);
-  let target: { folderId: string | null; createdFolderId: string | null } | null = null;
-  if (options?.promptFolder !== false) {
-    const current = unwrap(await api().getCalculationRecord(uuid));
-    const choice = await askFolder("update", payload.name.trim() || current.title, current.folderId ?? null, options);
-    title = choice.name?.trim() || title;
-    target = await resolveFolderChoice(choice);
-  }
-  let updated: CalculationRecord;
-  try {
-    updated = unwrap(
-      await api().updateCalculationRecord(uuid, {
-        title,
-        notes: typeof form.notes === "string" ? form.notes : null,
-        inputJson: form,
-        resultJson: data.results ?? null,
-      }),
-    );
-  } catch (error) {
-    await discardCreatedFolder(target?.createdFolderId ?? null);
-    throw error;
-  }
-  if (target) updated = await assignFolder(updated, target.folderId);
+  const current = unwrap(await api().getCalculationRecord(uuid));
+  const requested = options?.rename ? payload.name.trim() : "";
+  const title = requested || current.title.trim() || payload.name.trim() || autoTitle(payload.type, form);
+  const updated = unwrap(
+    await api().updateCalculationRecord(uuid, {
+      title,
+      notes: typeof form.notes === "string" ? form.notes : null,
+      inputJson: form,
+      resultJson: data.results ?? null,
+    }),
+  );
   return toSavedCaseRecord(updated, id);
 }
 
