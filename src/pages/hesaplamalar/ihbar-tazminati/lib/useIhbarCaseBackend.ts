@@ -229,7 +229,7 @@ export function useIhbarCaseBackend<TForm, TSaved extends { id: string; name: st
         void persist(activeName, form, baselineKey, result as never, setBaseline, activeId);
         return;
       }
-      setNameOpen(true);
+      void persist(activeName ?? "", form, baselineKey, result as never, setBaseline, null);
     },
     [activeId, activeName, config, persist, showError],
   );

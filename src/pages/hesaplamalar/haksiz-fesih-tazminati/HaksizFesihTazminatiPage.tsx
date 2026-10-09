@@ -358,7 +358,7 @@ export default function HaksizFesihTazminatiPage() {
       void persist(activeName, activeId);
       return;
     }
-    setNameOpen(true);
+    void persist(activeName || PAGE_TITLE, null);
   }, [activeId, activeName, persist, result.brutVal, showError]);
 
   const openCase = useCallback(

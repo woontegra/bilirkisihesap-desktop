@@ -511,7 +511,7 @@ export default function YeraltiFmPage() {
         currentRecordId,
       );
       setCurrentRecordId(String(saved.id));
-      setCurrentRecordName(name);
+      setCurrentRecordName(saved.name || name);
       setBaseline(snapshotKey(form));
       backendLoadedCaseIdRef.current = String(saved.id);
       const next = new URLSearchParams(searchParams);
@@ -536,7 +536,7 @@ export default function YeraltiFmPage() {
       persistCase(currentRecordName);
       return;
     }
-    setShowCaseSaveModal(true);
+    void persistCase(currentRecordName ?? "");
   };
 
   const confirmDeleteCase = () => {

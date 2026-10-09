@@ -1888,7 +1888,7 @@ export default function UbgtCalcPage({ mode, title }: Props) {
               disabled={!result || !!result.error || caseSaving}
               onClick={() => {
                 if (activeId && activeName && /^\d+$/.test(activeId)) void handleSave(activeName);
-                else setNameOpen(true);
+                else void handleSave(activeName ?? title);
               }}
             >
               <Save size={14} /> {caseSaving ? "Kaydediliyor…" : activeId && /^\d+$/.test(activeId) ? "Güncelle" : "Kaydet"}

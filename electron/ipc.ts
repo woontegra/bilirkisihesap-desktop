@@ -9,6 +9,13 @@ import {
   listCalculationRecords,
   updateCalculationRecord,
 } from "./db/calculationRecordsRepository";
+import {
+  createCalculationFolder,
+  deleteCalculationFolder,
+  listCalculationFolders,
+  moveCalculationRecordsToFolder,
+  renameCalculationFolder,
+} from "./db/calculationFoldersRepository";
 import { AppError, toUserMessage } from "./db/errors";
 import { getSetting, setSetting } from "./db/settingsRepository";
 import { getDesktopStorageInfo } from "./db/storageInfo";
@@ -112,6 +119,33 @@ export function registerIpcHandlers(licenseClient: LicenseClient, appInfo: AppIn
       await assertCanWrite();
       return archiveCalculationRecord(String(id));
     }),
+  );
+  ipcMain.handle(IPC_CHANNELS.listCalculationFolders, async () => wrap(() => listCalculationFolders()));
+  ipcMain.handle(IPC_CHANNELS.createCalculationFolder, async (_event, name: unknown) =>
+    wrap(async () => {
+      await assertCanWrite();
+      return createCalculationFolder(name);
+    }),
+  );
+  ipcMain.handle(IPC_CHANNELS.renameCalculationFolder, async (_event, id: unknown, name: unknown) =>
+    wrap(async () => {
+      await assertCanWrite();
+      return renameCalculationFolder(id, name);
+    }),
+  );
+  ipcMain.handle(IPC_CHANNELS.deleteCalculationFolder, async (_event, id: unknown) =>
+    wrap(async () => {
+      await assertCanWrite();
+      return deleteCalculationFolder(id);
+    }),
+  );
+  ipcMain.handle(
+    IPC_CHANNELS.moveCalculationRecordsToFolder,
+    async (_event, recordIds: unknown, folderId: unknown) =>
+      wrap(async () => {
+        await assertCanWrite();
+        return moveCalculationRecordsToFolder(recordIds, folderId);
+      }),
   );
   ipcMain.handle(IPC_CHANNELS.getSetting, async (_event, key: unknown) => wrap(() => getSetting(String(key))));
   ipcMain.handle(IPC_CHANNELS.setSetting, async (_event, key: unknown, value: unknown) =>

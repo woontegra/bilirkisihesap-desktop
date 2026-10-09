@@ -18,7 +18,7 @@ const {
 } = require("./lib/release-metadata.cjs");
 
 const WIN_FEED = "https://updates.woontegra.com/updates/bilirkisi-hesap-desktop/windows";
-const MAC_FEED = "https://updates.woontegra.com/updates/bilirkisi-hesap/macos";
+const MAC_FEED = "https://updates.woontegra.com/updates/bilirkisi-hesap-desktop/macos";
 
 let passed = 0;
 function ok(name) {
@@ -49,6 +49,24 @@ function main() {
   assert.equal(pkg.build?.publish?.[0]?.url, WIN_FEED);
   ok("build.publish[0].url = Windows feed");
 
+  assert.equal(pkg.build?.mac?.publish?.[0]?.provider, "generic");
+  assert.equal(pkg.build?.mac?.publish?.[0]?.url, MAC_FEED);
+  assert.ok(pkg.build?.mac?.target?.includes("zip"));
+  assert.ok(pkg.build?.mac?.target?.includes("dmg"));
+  assert.equal(pkg.build?.mac?.icon, "build/icon.icns");
+  assert.equal(pkg.build?.mac?.identity, undefined);
+  assert.equal(pkg.build?.productName, "Bilirkişi Hesap");
+  assert.equal(pkg.build?.nsis?.shortcutName, "Bilirkişi Hesap");
+  assert.equal(pkg.build?.afterPack, "scripts/mac-ascii-bundle-names.cjs");
+  const macNames = require("./mac-ascii-bundle-names.cjs");
+  assert.equal(macNames.toAsciiMacExecutableName("Bilirkişi Hesap"), "Bilirkisi Hesap");
+  assert.equal(
+    macNames.electronHelperName("Bilirkis\u0327i Hesap Helper (GPU).app", "Bilirkişi Hesap"),
+    "Electron Helper (GPU)",
+  );
+  assert.equal(macNames.electronHelperName("Bilirkişi Hesap Helper.app", "Bilirkişi Hesap"), "Electron Helper");
+  ok("mac.publish = macOS feed; zip+dmg ve icon.icns korunuyor; imza ayarı eklenmedi");
+
   assert.equal(pkg.build?.win?.signExecutable, false);
   assert.notEqual(pkg.build?.win?.signAndEditExecutable, false);
   ok("electron-builder Windows signing kapalı (signExecutable:false; resource/icon editing açık)");
@@ -75,22 +93,27 @@ function main() {
   const feeds = read("shared/updateFeeds.ts");
   assert.ok(feeds.includes(WIN_FEED));
   assert.ok(feeds.includes(MAC_FEED));
+  assert.ok(!feeds.includes("updates/bilirkisi-hesap/macos"));
   assert.ok(feeds.includes("resolveUpdateFeedUrl"));
-  ok("platform feed sabitleri (windows + reserved macos)");
+  assert.ok(feeds.includes('platform === "darwin"'));
+  ok("platform feed sabitleri (windows + macos)");
 
   const service = read("electron/update/updateService.ts");
   assert.ok(service.includes("autoDownload = false"));
   assert.ok(service.includes("autoInstallOnAppQuit = false"));
   assert.ok(service.includes("scheduleAutoUpdateCheck"));
   assert.ok(service.includes('if (!app.isPackaged)'));
-  assert.ok(service.includes('process.platform !== "win32"'));
+  assert.ok(!service.includes('process.platform !== "win32"'));
   assert.ok(service.includes("createPreUpdateBackup"));
   assert.ok(service.includes("quitAndInstall(false, true)"));
   assert.ok(service.includes("setFeedURL"));
-  assert.ok(service.includes('resolveUpdateFeedUrl("win32")'));
+  assert.ok(service.includes("resolveUpdateFeedUrl(process.platform)"));
+  assert.ok(!service.includes('resolveUpdateFeedUrl("win32")'));
   assert.ok(!service.includes("MACOS_UPDATE_FEED_URL"));
-  assert.ok(!/setFeedURL[\s\S]*macos/i.test(service));
-  ok("updateService: packaged-only, win32 feed, backup-before-install");
+  assert.ok(!service.includes(MAC_FEED));
+  assert.ok(!service.includes(WIN_FEED));
+  assert.ok(service.includes("Windows güncelleme feed URL yapılandırılamadı."));
+  ok("updateService: packaged-only, win32+darwin feed, backup-before-install");
 
   // Backup failure must block quitAndInstall: backup fail path precedes quitAndInstall
   const installIdx = service.indexOf("export async function installUpdate");

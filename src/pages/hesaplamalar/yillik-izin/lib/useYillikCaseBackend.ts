@@ -264,7 +264,7 @@ export function useYillikCaseBackend<TForm, TSaved extends { id: string; name: s
         void persist(activeName, form, baselineKey, result, setBaseline, activeId);
         return;
       }
-      setNameOpen(true);
+      void persist(activeName ?? "", form, baselineKey, result, setBaseline, null);
     },
     [activeId, activeName, config, persist, showError],
   );

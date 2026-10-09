@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
+import { isSaveCancelledMessage } from "@/api/saveFolderPrompt";
 import styles from "./ToastContext.module.css";
 
 type ToastTone = "success" | "error" | "info";
@@ -31,7 +32,9 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const api = useMemo<ToastApi>(
     () => ({
       success: (m) => push(m, "success"),
-      error: (m) => push(m, "error"),
+      error: (m) => {
+        if (!isSaveCancelledMessage(m)) push(m, "error");
+      },
       info: (m) => push(m, "info"),
     }),
     [push],

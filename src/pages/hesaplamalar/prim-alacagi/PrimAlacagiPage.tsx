@@ -330,7 +330,7 @@ export default function PrimAlacagiPage() {
       void persist(activeName, activeId);
       return;
     }
-    setNameOpen(true);
+    void persist(activeName || PAGE_TITLE, null);
   }, [activeId, activeName, form, persist, showError]);
 
   const openCase = useCallback(

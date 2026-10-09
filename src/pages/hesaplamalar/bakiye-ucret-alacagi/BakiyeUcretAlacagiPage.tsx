@@ -665,7 +665,7 @@ export default function BakiyeUcretAlacagiPage() {
       void persist(activeName, activeId);
       return;
     }
-    setNameOpen(true);
+    void persist(activeName ?? PAGE_TITLE, null);
   }, [activeId, activeName, displayMonthRows.length, persist, result, showError]);
 
   const doDelete = useCallback(async () => {

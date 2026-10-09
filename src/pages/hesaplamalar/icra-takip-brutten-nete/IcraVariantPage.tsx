@@ -768,7 +768,7 @@ export default function IcraVariantPage({ variant, title, backTo = "/icra-takip-
                   void handleSave(activeName, activeId);
                   return;
                 }
-                setNameOpen(true);
+                void handleSave(activeName ?? title, null);
               }}
             >
               <Save size={14} />{" "}

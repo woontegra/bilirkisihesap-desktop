@@ -95,15 +95,14 @@ function broadcastStatus(): void {
   }
 }
 
-/** Windows-only feed. macOS feed is reserved and never used from win32. */
+/** Windows and macOS generic feeds. Other platforms are not configured. */
 function configureFeedForPlatform(): boolean {
   if (feedConfigured) return true;
-  if (process.platform !== "win32") {
-    log.info("[update] skip feed configure (non-windows)", { platform: process.platform });
+  const url = resolveUpdateFeedUrl(process.platform);
+  if (!url) {
+    log.info("[update] skip feed configure (unsupported platform)", { platform: process.platform });
     return false;
   }
-  const url = resolveUpdateFeedUrl("win32");
-  if (!url) return false;
   autoUpdater.setFeedURL({ provider: "generic", url });
   feedConfigured = true;
   log.info("[update] feed configured", { url, platform: process.platform });
@@ -274,8 +273,8 @@ export async function checkForUpdates(source: UpdateCheckSource): Promise<Update
     return { ok: true };
   }
 
-  if (process.platform !== "win32") {
-    log.info("[update] skip check (non-windows packaged)", { platform: process.platform, source });
+  if (!resolveUpdateFeedUrl(process.platform)) {
+    log.info("[update] skip check (unsupported platform)", { platform: process.platform, source });
     if (source === "manual") {
       setStatus({
         state: "not-available",
@@ -288,7 +287,10 @@ export async function checkForUpdates(source: UpdateCheckSource): Promise<Update
   }
 
   if (!configureFeedForPlatform()) {
-    const summary = "Windows güncelleme feed URL yapılandırılamadı.";
+    const summary =
+      process.platform === "darwin"
+        ? "macOS güncelleme feed URL yapılandırılamadı."
+        : "Windows güncelleme feed URL yapılandırılamadı.";
     if (source === "manual") {
       setStatus({ state: "error", errorMessage: summary, showPrompt: true, infoMessage: null });
       return { ok: false, error: summary };

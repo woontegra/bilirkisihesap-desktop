@@ -19,6 +19,12 @@ const api: DesktopApi = {
   updateCalculationRecord: (id, payload) =>
     ipcRenderer.invoke(IPC_CHANNELS.updateCalculationRecord, id, payload),
   deleteCalculationRecord: (id) => ipcRenderer.invoke(IPC_CHANNELS.deleteCalculationRecord, id),
+  listCalculationFolders: () => ipcRenderer.invoke(IPC_CHANNELS.listCalculationFolders),
+  createCalculationFolder: (name) => ipcRenderer.invoke(IPC_CHANNELS.createCalculationFolder, name),
+  renameCalculationFolder: (id, name) => ipcRenderer.invoke(IPC_CHANNELS.renameCalculationFolder, id, name),
+  deleteCalculationFolder: (id) => ipcRenderer.invoke(IPC_CHANNELS.deleteCalculationFolder, id),
+  moveCalculationRecordsToFolder: (recordIds, folderId) =>
+    ipcRenderer.invoke(IPC_CHANNELS.moveCalculationRecordsToFolder, recordIds, folderId),
   getSetting: (key) => ipcRenderer.invoke(IPC_CHANNELS.getSetting, key),
   setSetting: (key, value) => ipcRenderer.invoke(IPC_CHANNELS.setSetting, key, value),
   createDevSampleRecord: () => ipcRenderer.invoke(IPC_CHANNELS.createDevSampleRecord),

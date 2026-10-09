@@ -393,7 +393,7 @@ export default function UcretAlacagiPage() {
       void persist(activeName, activeId);
       return;
     }
-    setNameOpen(true);
+    void persist(activeName || PAGE_TITLE, null);
   }, [activeId, activeName, persist, result.totalBrut, result.totalNet, showError]);
 
   const openCase = useCallback(

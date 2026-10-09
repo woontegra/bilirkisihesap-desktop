@@ -351,7 +351,7 @@ export default function IsAramaIzniUcretiPage() {
       void persist(activeName, activeId);
       return;
     }
-    setNameOpen(true);
+    void persist(activeName || PAGE_TITLE, null);
   }, [activeId, activeName, persist, result.brut, showError]);
 
   const openCase = useCallback(

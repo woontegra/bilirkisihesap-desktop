@@ -635,6 +635,8 @@ export function HaftaTatiliCalcPage<TForm extends HaftaTatiliBaseForm>({ config 
         void doSave(activeName);
         return;
       }
+      void doSave(activeName || `${config.pageTitle} — ${new Date().toLocaleDateString("tr-TR")}`);
+      return;
     }
     setNameOpen(true);
   };

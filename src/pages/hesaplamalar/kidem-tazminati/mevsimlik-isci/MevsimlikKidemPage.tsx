@@ -686,7 +686,7 @@ export default function MevsimlikKidemPage() {
       void persistCase(currentRecordName);
       return;
     }
-    setShowCaseSaveModal(true);
+    void persistCase(currentRecordName ?? "");
   };
 
   const confirmDeleteCase = async () => {

@@ -1,5 +1,12 @@
-import type { CalculationRecord } from "@shared/desktop-contract";
+import type { CalculationFolder, CalculationRecord } from "@shared/desktop-contract";
 import { ApiError } from "./client";
+import {
+  folderNameKey,
+  reportSaveFolderWarning,
+  requestSaveFolder,
+  SaveCancelledError,
+  type SaveFolderChoice,
+} from "./saveFolderPrompt";
 
 export type SavedCaseRecord = {
   id: number;
@@ -14,7 +21,10 @@ export type SavedCaseRecord = {
   created_at?: string;
   ise_giris?: string | null;
   isten_cikis?: string | null;
+  folderId?: string | null;
 };
+
+export type SavedCaseFolder = CalculationFolder;
 
 export type CreateSavedCasePayload = {
   name: string;
@@ -27,6 +37,9 @@ export type UpdateSavedCasePayload = {
   type: string;
   data: unknown;
 };
+
+/** promptFolder: false → klasör sorulmaz; yeni kayıt klasörsüz, güncellenen kayıt mevcut klasöründe kalır. */
+export type SaveCaseOptions = { promptFolder?: boolean };
 
 const MAP_KEY = "saved-case-numeric-ids";
 const LEGACY_MAP_KEY = "kidem-is-kanunu-numeric-ids";
@@ -118,6 +131,7 @@ function toSavedCaseRecord(record: CalculationRecord, numericId: number): SavedC
     created_at: record.createdAt,
     ise_giris: typeof input.iseGirisTarihi === "string" ? input.iseGirisTarihi : null,
     isten_cikis: typeof input.istenCikisTarihi === "string" ? input.istenCikisTarihi : null,
+    folderId: record.folderId ?? null,
   };
 }
 
@@ -137,34 +151,110 @@ export async function getSavedCase(id: number): Promise<SavedCaseRecord> {
   return toSavedCaseRecord(record, id);
 }
 
-export async function createSavedCase(payload: CreateSavedCasePayload): Promise<SavedCaseRecord> {
+async function askFolder(
+  mode: "create" | "update",
+  suggestedName: string,
+  currentFolderId: string | null,
+  options?: SaveCaseOptions,
+): Promise<SaveFolderChoice> {
+  if (options?.promptFolder === false) return { name: suggestedName, folderId: currentFolderId };
+  const choice = await requestSaveFolder({ mode, suggestedName, currentFolderId });
+  if (!choice) throw new SaveCancelledError();
+  return choice;
+}
+
+/** Yeni klasör yalnızca kayıt onaylandıktan sonra oluşturulur; aynı adlı klasör varsa o kullanılır. */
+async function resolveFolderChoice(choice: SaveFolderChoice): Promise<{ folderId: string | null; createdFolderId: string | null }> {
+  if ("folderId" in choice) return { folderId: choice.folderId, createdFolderId: null };
+  const key = folderNameKey(choice.newFolderName);
+  const existing = unwrap(await api().listCalculationFolders()).find((f) => folderNameKey(f.name) === key);
+  if (existing) return { folderId: existing.id, createdFolderId: null };
+  const created = unwrap(await api().createCalculationFolder(choice.newFolderName));
+  return { folderId: created.id, createdFolderId: created.id };
+}
+
+async function discardCreatedFolder(folderId: string | null): Promise<void> {
+  if (!folderId) return;
+  try {
+    await api().deleteCalculationFolder(folderId);
+  } catch {
+    /* boş klasör kalırsa veri kaybı yok */
+  }
+}
+
+async function assignFolder(record: CalculationRecord, folderId: string | null): Promise<CalculationRecord> {
+  if ((record.folderId ?? null) === folderId) return record;
+  try {
+    unwrap(await api().moveCalculationRecordsToFolder([record.id], folderId));
+    return { ...record, folderId };
+  } catch (error) {
+    reportSaveFolderWarning(
+      `Hesaplama kaydedildi ancak klasöre taşınamadı: ${error instanceof Error ? error.message : "bilinmeyen hata"}`,
+    );
+    return record;
+  }
+}
+
+export async function createSavedCase(
+  payload: CreateSavedCasePayload,
+  options?: SaveCaseOptions,
+): Promise<SavedCaseRecord> {
   const data = (payload.data ?? {}) as Record<string, unknown>;
   const form = (data.form ?? data.formValues ?? {}) as Record<string, unknown>;
-  const created = unwrap(
-    await api().createCalculationRecord({
-      calculationType: payload.type.trim() || "hesaplama",
-      title: payload.name.trim() || autoTitle(payload.type, form),
-      notes: typeof form.notes === "string" ? form.notes : null,
-      inputJson: form,
-      resultJson: data.results ?? null,
-    }),
-  );
+  const choice = await askFolder("create", payload.name.trim(), null, options);
+  const title = choice.name?.trim() || payload.name.trim() || autoTitle(payload.type, form);
+  const { folderId, createdFolderId } = await resolveFolderChoice(choice);
+  let created: CalculationRecord;
+  try {
+    created = unwrap(
+      await api().createCalculationRecord({
+        calculationType: payload.type.trim() || "hesaplama",
+        title,
+        notes: typeof form.notes === "string" ? form.notes : null,
+        inputJson: form,
+        resultJson: data.results ?? null,
+      }),
+    );
+  } catch (error) {
+    await discardCreatedFolder(createdFolderId);
+    throw error;
+  }
+  created = await assignFolder(created, folderId);
   const numericId = await ensureNumeric(created.id);
   return toSavedCaseRecord(created, numericId);
 }
 
-export async function updateSavedCase(id: number, payload: UpdateSavedCasePayload): Promise<SavedCaseRecord> {
+export async function updateSavedCase(
+  id: number,
+  payload: UpdateSavedCasePayload,
+  options?: SaveCaseOptions,
+): Promise<SavedCaseRecord> {
   const uuid = await uuidFromNumeric(id);
   const data = (payload.data ?? {}) as Record<string, unknown>;
   const form = (data.form ?? data.formValues ?? {}) as Record<string, unknown>;
-  const updated = unwrap(
-    await api().updateCalculationRecord(uuid, {
-      title: payload.name.trim() || autoTitle(payload.type, form),
-      notes: typeof form.notes === "string" ? form.notes : null,
-      inputJson: form,
-      resultJson: data.results ?? null,
-    }),
-  );
+  let title = payload.name.trim() || autoTitle(payload.type, form);
+  let target: { folderId: string | null; createdFolderId: string | null } | null = null;
+  if (options?.promptFolder !== false) {
+    const current = unwrap(await api().getCalculationRecord(uuid));
+    const choice = await askFolder("update", payload.name.trim() || current.title, current.folderId ?? null, options);
+    title = choice.name?.trim() || title;
+    target = await resolveFolderChoice(choice);
+  }
+  let updated: CalculationRecord;
+  try {
+    updated = unwrap(
+      await api().updateCalculationRecord(uuid, {
+        title,
+        notes: typeof form.notes === "string" ? form.notes : null,
+        inputJson: form,
+        resultJson: data.results ?? null,
+      }),
+    );
+  } catch (error) {
+    await discardCreatedFolder(target?.createdFolderId ?? null);
+    throw error;
+  }
+  if (target) updated = await assignFolder(updated, target.folderId);
   return toSavedCaseRecord(updated, id);
 }
 
@@ -181,4 +271,26 @@ function autoTitle(type: string, form: Record<string, unknown>): string {
 
 export async function ensureNumericIdForUuid(uuid: string): Promise<number> {
   return ensureNumeric(uuid);
+}
+
+export async function listSavedCaseFolders(): Promise<SavedCaseFolder[]> {
+  return unwrap(await api().listCalculationFolders());
+}
+
+export async function createSavedCaseFolder(name: string): Promise<SavedCaseFolder> {
+  return unwrap(await api().createCalculationFolder(name));
+}
+
+export async function renameSavedCaseFolder(id: string, name: string): Promise<SavedCaseFolder> {
+  return unwrap(await api().renameCalculationFolder(id, name));
+}
+
+export async function deleteSavedCaseFolder(id: string): Promise<{ id: string; releasedRecords: number }> {
+  return unwrap(await api().deleteCalculationFolder(id));
+}
+
+export async function moveSavedCasesToFolder(ids: number[], folderId: string | null): Promise<{ moved: number }> {
+  const uuids: string[] = [];
+  for (const id of ids) uuids.push(await uuidFromNumeric(id));
+  return unwrap(await api().moveCalculationRecordsToFolder(uuids, folderId));
 }

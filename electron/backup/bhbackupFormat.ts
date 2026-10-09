@@ -22,7 +22,11 @@ export type BackupPayload = {
     type: string;
     data: unknown;
     originalCreatedAt?: string;
+    /** Klasör adı; eski yedeklerde yoktur ve kayıt klasörsüz yüklenir. */
+    folder?: string | null;
   }>;
+  /** Boş klasörlerin de geri gelmesi için. Eski uygulama sürümleri bu alanı yok sayar. */
+  folders?: Array<{ name: string }>;
 };
 
 function deriveKey(): Buffer {

@@ -10,6 +10,7 @@ import { PAGE_TITLES } from "./nav";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
 import { UpdatePromptHost } from "../update/UpdatePromptHost";
+import { SaveFolderPromptHost } from "../components/save-folder/SaveFolderPromptHost";
 import { WageInputGuard } from "../hooks/useDeferredFormMemo";
 import styles from "./AppShell.module.css";
 
@@ -116,6 +117,7 @@ export function AppShell() {
         </main>
       </div>
       <UpdatePromptHost />
+      <SaveFolderPromptHost defaultName={title} />
     </div>
   );
 }

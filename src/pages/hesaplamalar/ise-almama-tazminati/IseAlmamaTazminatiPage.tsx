@@ -374,7 +374,7 @@ export default function IseAlmamaTazminatiPage() {
       void persist(activeName, activeId);
       return;
     }
-    setNameOpen(true);
+    void persist(activeName || PAGE_TITLE, null);
   }, [activeId, activeName, persist, result.brutVal, result.coefRows.length, showError]);
 
   const openCase = useCallback(

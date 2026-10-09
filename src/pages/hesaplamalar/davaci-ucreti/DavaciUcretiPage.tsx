@@ -705,7 +705,7 @@ export default function DavaciUcretiPage() {
       void persistCase(currentRecordName);
       return;
     }
-    setShowCaseSaveModal(true);
+    void persistCase(currentRecordName ?? "");
   };
 
   const confirmDeleteCase = async () => {

@@ -528,7 +528,7 @@ export default function StandartFmPage() {
     try {
       const saved = await saveStandartFmCase(name, form, result, currentRecordId);
       setCurrentRecordId(String(saved.id));
-      setCurrentRecordName(name);
+      setCurrentRecordName(saved.name || name);
       setBaseline(snapshotKey(form));
       backendLoadedCaseIdRef.current = String(saved.id);
       const next = new URLSearchParams(searchParams);
@@ -553,7 +553,7 @@ export default function StandartFmPage() {
       persistCase(currentRecordName);
       return;
     }
-    setShowCaseSaveModal(true);
+    void persistCase(currentRecordName ?? "");
   };
 
   const confirmDeleteCase = () => {

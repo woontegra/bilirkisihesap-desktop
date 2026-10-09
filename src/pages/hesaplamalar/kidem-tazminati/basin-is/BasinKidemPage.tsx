@@ -622,7 +622,7 @@ export default function BasinKidemPage() {
       void persistCase(currentRecordName);
       return;
     }
-    setShowCaseSaveModal(true);
+    void persistCase(currentRecordName ?? "");
   };
 
   const confirmDeleteCase = async () => {

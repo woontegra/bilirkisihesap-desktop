@@ -10,6 +10,11 @@ export const IPC_CHANNELS = {
   createCalculationRecord: "desktop:create-calculation-record",
   updateCalculationRecord: "desktop:update-calculation-record",
   deleteCalculationRecord: "desktop:delete-calculation-record",
+  listCalculationFolders: "desktop:list-calculation-folders",
+  createCalculationFolder: "desktop:create-calculation-folder",
+  renameCalculationFolder: "desktop:rename-calculation-folder",
+  deleteCalculationFolder: "desktop:delete-calculation-folder",
+  moveCalculationRecordsToFolder: "desktop:move-calculation-records-to-folder",
   getSetting: "desktop:get-setting",
   setSetting: "desktop:set-setting",
   createDevSampleRecord: "desktop:create-dev-sample-record",
@@ -193,6 +198,15 @@ export type CalculationRecord = {
   createdAt: string;
   updatedAt: string;
   archivedAt: string | null;
+  /** null: klasörsüz. 004 öncesi kayıtlar da null okunur. */
+  folderId?: string | null;
+};
+
+export type CalculationFolder = {
+  id: string;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type CalculationRecordInput = {
@@ -281,6 +295,14 @@ export type DesktopApi = {
     payload: CalculationRecordUpdate,
   ) => Promise<IpcResult<CalculationRecord>>;
   deleteCalculationRecord: (id: string) => Promise<IpcResult<{ id: string }>>;
+  listCalculationFolders: () => Promise<IpcResult<CalculationFolder[]>>;
+  createCalculationFolder: (name: string) => Promise<IpcResult<CalculationFolder>>;
+  renameCalculationFolder: (id: string, name: string) => Promise<IpcResult<CalculationFolder>>;
+  deleteCalculationFolder: (id: string) => Promise<IpcResult<{ id: string; releasedRecords: number }>>;
+  moveCalculationRecordsToFolder: (
+    recordIds: string[],
+    folderId: string | null,
+  ) => Promise<IpcResult<{ moved: number }>>;
   getSetting: (key: string) => Promise<IpcResult<AppSetting | null>>;
   setSetting: (key: string, value: string) => Promise<IpcResult<AppSetting>>;
   createDevSampleRecord: () => Promise<IpcResult<CalculationRecord>>;

@@ -32,6 +32,7 @@
     "appId": "com.woontegra.bilirkisihesap",
     "productName": "Bilirkişi Hesap",
     "artifactName": "Bilirkisi-Hesap-Setup-${version}.${ext}",
+    "afterPack": "scripts/mac-ascii-bundle-names.cjs",
     "directories": {
       "buildResources": "build",
       "output": "release"
@@ -78,7 +79,14 @@
         "zip"
       ],
       "artifactName": "${productName}-${version}-mac-${arch}.${ext}",
-      "category": "public.app-category.business"
+      "category": "public.app-category.business",
+      "icon": "build/icon.icns",
+      "publish": [
+        {
+          "provider": "generic",
+          "url": "https://updates.woontegra.com/updates/bilirkisi-hesap-desktop/macos"
+        }
+      ]
     },
     "publish": [
       {

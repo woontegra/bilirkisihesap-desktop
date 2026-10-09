@@ -68,6 +68,24 @@ export const MIGRATIONS: Migration[] = [
       );
     `,
   },
+  {
+    version: 4,
+    name: "004_calculation_folders",
+    sql: `
+      CREATE TABLE IF NOT EXISTS calculation_folders (
+        id TEXT PRIMARY KEY NOT NULL,
+        name TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+
+      ALTER TABLE calculation_records
+        ADD COLUMN folder_id TEXT REFERENCES calculation_folders (id) ON DELETE SET NULL;
+
+      CREATE INDEX IF NOT EXISTS idx_calculation_records_folder
+        ON calculation_records (folder_id);
+    `,
+  },
 ];
 
 export function runMigrations(db: Database.Database): void {

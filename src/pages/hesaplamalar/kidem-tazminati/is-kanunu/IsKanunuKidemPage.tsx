@@ -701,7 +701,7 @@ export default function IsKanunuKidemPage() {
       void persistCase(currentRecordName);
       return;
     }
-    setShowCaseSaveModal(true);
+    void persistCase(currentRecordName ?? "");
   };
 
   const confirmDeleteCase = async () => {

@@ -475,7 +475,7 @@ export default function BostaGecenSureUcretiPage() {
       void persist(activeName, activeId);
       return;
     }
-    setNameOpen(true);
+    void persist(activeName || PAGE_TITLE, null);
   }, [activeId, activeName, persist, result.brutAmount, showError]);
 
   const openCase = useCallback(

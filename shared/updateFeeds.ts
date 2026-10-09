@@ -2,9 +2,9 @@
 export const WINDOWS_UPDATE_FEED_URL =
   "https://updates.woontegra.com/updates/bilirkisi-hesap-desktop/windows";
 
-/** Reserved for future macOS updater — do not use from Windows code paths. */
+/** macOS generic feed. electron-updater loads latest-mac.yml and installs the ZIP, not the DMG. */
 export const MACOS_UPDATE_FEED_URL =
-  "https://updates.woontegra.com/updates/bilirkisi-hesap/macos";
+  "https://updates.woontegra.com/updates/bilirkisi-hesap-desktop/macos";
 
 export function resolveUpdateFeedUrl(platform: NodeJS.Platform = process.platform): string | null {
   if (platform === "win32") return WINDOWS_UPDATE_FEED_URL;

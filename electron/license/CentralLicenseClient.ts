@@ -10,6 +10,7 @@ import {
 import type { LicenseClient } from "./LicenseClient";
 import {
   LicenseNetworkError,
+  LicenseTransientError,
   licensePublicApiBase,
   postLicenseJson,
   type LicenseActivateApiResponse,
@@ -33,11 +34,61 @@ function apiBase(): string {
   return licensePublicApiBase();
 }
 
+/** Sayfa geçişleri ve odak olayları sunucuya tekrar gitmesin; iptal en geç bu süre sonunda görünür. */
+export const LICENSE_STATUS_CACHE_TTL_MS = 30_000;
+
+const TRIAL_TRANSIENT_MESSAGE =
+  "Lisans sunucusu geçici olarak yanıt vermiyor. Son doğrulanan deneme bilgisiyle devam ediyorsunuz.";
+
+function transientFailureMessage(error: LicenseTransientError): string {
+  return error.serverMessage || userMessageForState("unreachable");
+}
+
 export class CentralLicenseClient implements LicenseClient {
   readonly source = "central" as const;
 
+  private cachedStatus: { status: DesktopLicenseStatus; at: number } | null = null;
+  private inflightStatus: Promise<DesktopLicenseStatus> | null = null;
+
   async getStatus(): Promise<DesktopLicenseStatus> {
-    return this.resolveStatus();
+    const cached = this.freshCachedStatus(Date.now());
+    if (cached) return cached;
+    return this.sharedResolve();
+  }
+
+  invalidateStatusCache(): void {
+    this.cachedStatus = null;
+    this.inflightStatus = null;
+  }
+
+  private freshCachedStatus(now: number): DesktopLicenseStatus | null {
+    const entry = this.cachedStatus;
+    if (!entry) return null;
+    const age = now - entry.at;
+    if (age < 0 || age >= LICENSE_STATUS_CACHE_TTL_MS) return null;
+    if (entry.status.state !== "active" || isExpiredAt(entry.status.expiresAt, now)) return null;
+    return entry.status;
+  }
+
+  private sharedResolve(): Promise<DesktopLicenseStatus> {
+    if (this.inflightStatus) return this.inflightStatus;
+    const run: Promise<DesktopLicenseStatus> = this.resolveStatus()
+      .then((status) => {
+        if (this.inflightStatus === run) {
+          this.cachedStatus = status.state === "active" ? { status, at: Date.now() } : null;
+        }
+        return status;
+      })
+      .finally(() => {
+        if (this.inflightStatus === run) this.inflightStatus = null;
+      });
+    this.inflightStatus = run;
+    return run;
+  }
+
+  private freshResolve(): Promise<DesktopLicenseStatus> {
+    this.invalidateStatusCache();
+    return this.sharedResolve();
   }
 
   async activate(payload: LicenseActivatePayload): Promise<IpcResult<DesktopLicenseStatus>> {
@@ -78,10 +129,13 @@ export class CentralLicenseClient implements LicenseClient {
         maxDevices: null,
         status: "ACTIVE",
       });
-      return { ok: true, data: await this.resolveStatus() };
+      return { ok: true, data: await this.freshResolve() };
     } catch (error) {
       if (error instanceof LicenseNetworkError) {
         return { ok: false, message: userMessageForState("unreachable") };
+      }
+      if (error instanceof LicenseTransientError) {
+        return { ok: false, message: transientFailureMessage(error) };
       }
       return { ok: false, message: "Lisans etkinleştirilemedi." };
     }
@@ -125,23 +179,26 @@ export class CentralLicenseClient implements LicenseClient {
         licenseKey: "",
         deviceHash,
         expiresAt: out.expiresAt,
-        lastValidatedAt: now,
+        lastValidatedAt: null,
         offlineGraceUntil: null,
         lastSeenAt: now,
         maxDevices: 1,
         status: "ACTIVE",
       });
-      return { ok: true, data: await this.resolveStatus() };
+      return { ok: true, data: await this.freshResolve() };
     } catch (error) {
       if (error instanceof LicenseNetworkError) {
         return { ok: false, message: userMessageForState("unreachable") };
+      }
+      if (error instanceof LicenseTransientError) {
+        return { ok: false, message: transientFailureMessage(error) };
       }
       return { ok: false, message: "Ücretsiz deneme başlatılamadı." };
     }
   }
 
   async refresh(): Promise<IpcResult<DesktopLicenseStatus>> {
-    const status = await this.resolveStatus();
+    const status = await this.freshResolve();
     if (status.state === "unreachable" || status.state === "offline_expired") {
       return { ok: false, message: status.message };
     }
@@ -245,7 +302,8 @@ export class CentralLicenseClient implements LicenseClient {
         message: userMessageForState("active", out.message),
       });
     } catch (error) {
-      if (!(error instanceof LicenseNetworkError)) {
+      const transient = error instanceof LicenseTransientError;
+      if (!(error instanceof LicenseNetworkError) && !transient) {
         return this.fromStore(stored, {
           state: "unreachable",
           message: userMessageForState("unreachable"),
@@ -259,7 +317,7 @@ export class CentralLicenseClient implements LicenseClient {
           message: "Lisans sunucusuna ulaşılamadı. Son doğrulama bilgisiyle devam ediyorsunuz.",
         });
       }
-      writeStoredLicense({ ...stored, status: "LOCKED" });
+      if (!transient) writeStoredLicense({ ...stored, status: "LOCKED" });
       return this.fromStore(stored, {
         state: "offline_expired",
         message: userMessageForState("offline_expired"),
@@ -352,6 +410,21 @@ export class CentralLicenseClient implements LicenseClient {
         message: out.message?.trim() || "Deneme lisansı geçerli.",
       });
     } catch (error) {
+      if (
+        error instanceof LicenseTransientError &&
+        stored.status === "ACTIVE" &&
+        stored.lastValidatedAt &&
+        stored.expiresAt &&
+        !isExpiredAt(stored.expiresAt, now)
+      ) {
+        return this.fromStore(stored, {
+          state: "active",
+          isOfflineGrace: true,
+          offlineGraceUntil: null,
+          planLabel: "7 günlük deneme",
+          message: TRIAL_TRANSIENT_MESSAGE,
+        });
+      }
       if (!(error instanceof LicenseNetworkError)) {
         return this.fromStore(stored, {
           state: "unreachable",

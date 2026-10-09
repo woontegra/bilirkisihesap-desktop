@@ -19,6 +19,7 @@ type CalculationRow = {
   created_at: string;
   updated_at: string;
   archived_at: string | null;
+  folder_id?: string | null;
 };
 
 const TITLE_MAX = 200;
@@ -27,7 +28,7 @@ const NOTES_MAX = 4000;
 export function listCalculationRecords(): CalculationRecord[] {
   const rows = getDatabase()
     .prepare(
-      `SELECT id, calculation_type, title, input_json, result_json, notes, created_at, updated_at, archived_at
+      `SELECT id, calculation_type, title, input_json, result_json, notes, created_at, updated_at, archived_at, folder_id
        FROM calculation_records
        WHERE archived_at IS NULL
        ORDER BY updated_at DESC`,
@@ -46,7 +47,7 @@ export function countActiveCalculationRecords(): number {
 export function getCalculationRecord(id: string): CalculationRecord {
   const row = getDatabase()
     .prepare(
-      `SELECT id, calculation_type, title, input_json, result_json, notes, created_at, updated_at, archived_at
+      `SELECT id, calculation_type, title, input_json, result_json, notes, created_at, updated_at, archived_at, folder_id
        FROM calculation_records
        WHERE id = ? AND archived_at IS NULL`,
     )
@@ -69,6 +70,7 @@ export function createCalculationRecord(payload: Record<string, unknown> | Calcu
     createdAt: now,
     updatedAt: now,
     archivedAt: null,
+    folderId: null,
   };
 
   getDatabase()
@@ -160,6 +162,7 @@ function mapRow(row: CalculationRow): CalculationRecord {
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     archivedAt: row.archived_at,
+    folderId: row.folder_id ?? null,
   };
 }
 
