@@ -337,6 +337,7 @@ for (const span of SPANS) {
     yol: "1000",
     yemek: "",
     extras: [],
+    eklentiGunEsasi: 360,
   });
   expectFullRates("bosta", span.end, ratesForAccrual(span.end).sgkOran, bosta.issizlikOran || 0, bosta.damgaOran || 0);
   if (!near(bosta.sgk, r2(bosta.brutAmount * ratesForAccrual(span.end).sgkOran))) fail(`boşta SGK ${bosta.sgk}`);
@@ -398,6 +399,7 @@ for (const span of SPANS) {
     yol: "",
     yemek: "",
     extras: [],
+    eklentiGunEsasi: 360 as const,
     meslegeBaslangic: "",
   };
   const ihbars = [
@@ -512,6 +514,7 @@ for (const span of SPANS) {
     yol: "",
     yemek: "",
     extras: [],
+    eklentiGunEsasi: 360,
   });
   expectStampOnly("kotu-niyet", span.end, kotu.damgaOran || 0);
   push({

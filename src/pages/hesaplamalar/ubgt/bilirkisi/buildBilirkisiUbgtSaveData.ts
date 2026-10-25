@@ -1,6 +1,7 @@
 /**
  * Bilirkişi UBGT — V3 `UbgtBilirkisiPage` kayıt şekline uyumlu payload.
  */
+import { normalizeHakkaniyetOrani } from "../../fazla-mesai/shared/hakkaniyetOrani";
 import type { CalcSaveResult } from "../../shared/calcBackendCrud";
 import type { UbgtForm } from "../model";
 import type { CetvelDisplayRow } from "../ubgtCetvelRows";
@@ -150,6 +151,7 @@ export function buildBilirkisiUbgtSaveData(
     settlement,
     mode: "bilirkisi" as const,
     settleAmount: form.settleAmount,
+    hakkaniyetOrani: normalizeHakkaniyetOrani(form.hakkaniyetOrani),
     mahsuplasamaData: form.mahsuplasamaData,
     year: form.year,
   };

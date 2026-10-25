@@ -56,6 +56,8 @@ import {
   excludedDaysToSetItems,
   setItemsToExcludedDays,
 } from "./exclusionSets";
+import { hakkaniyetOraniEtiketi, type HakkaniyetOrani } from "../../fazla-mesai/shared/hakkaniyetOrani";
+import { HakkaniyetOraniSecimi } from "../../fazla-mesai/shared/HakkaniyetOraniSecimi";
 
 export type HaftaTatiliComputeResult = {
   rows: TableRow[];
@@ -74,6 +76,7 @@ export type HaftaTatiliBaseForm = {
   selectedHolidayIds: string[];
   rows: TableRow[];
   settleAmount: string;
+  hakkaniyetOrani: HakkaniyetOrani;
   globalCoefficient: number;
   kullanimBaslangic?: string;
   kullanimBitis?: string;
@@ -542,7 +545,7 @@ export function HaftaTatiliCalcPage<TForm extends HaftaTatiliBaseForm>({ config 
       headers: ["Kalem", "Tutar"],
       rows: [
         ["Toplam Brüt Alacak", `${formatMoney(result.totalBrut)} ₺`],
-        ["1/3 Hakkaniyet İndirimi", `-${formatMoney(result.hakkaniyet)} ₺`],
+        [`${hakkaniyetOraniEtiketi(form.hakkaniyetOrani)} Hakkaniyet İndirimi`, `-${formatMoney(result.hakkaniyet)} ₺`],
         ["Mahsuplaşma Tutarı", `-${formatMoney(mahsupTutar)} ₺`],
         ["Son Brüt Alacak", `${formatMoney(result.mahsupSonuc)} ₺`],
         ...equityNetPreviewRows({
@@ -1018,7 +1021,10 @@ export function HaftaTatiliCalcPage<TForm extends HaftaTatiliBaseForm>({ config 
                   <strong>{formatMoney(result.totalBrut)} ₺</strong>
                 </div>
                 <div className={styles.line}>
-                  <span>1/3 Hakkaniyet İndirimi</span>
+                  <HakkaniyetOraniSecimi
+                    value={form.hakkaniyetOrani}
+                    onChange={(v) => patch("hakkaniyetOrani", v as TForm["hakkaniyetOrani"])}
+                  />
                   <strong className={styles.deduction}>−{formatMoney(result.hakkaniyet)} ₺</strong>
                 </div>
                 <div className={styles.line}>

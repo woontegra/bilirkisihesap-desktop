@@ -15,6 +15,7 @@ import { ihbarBorclarBackend } from "../lib/ihbarBackendInstances";
 import { makeIhbarBackendConfig } from "../lib/makeIhbarBackendConfig";
 
 import { IhbarPageView, type WageFieldKey } from "../lib/IhbarPageView";
+import { eklentiDokumuYaz } from "../../shared/eklentiDokumu";
 
 import { useIhbarCaseBackend } from "../lib/useIhbarCaseBackend";
 
@@ -452,6 +453,18 @@ export default function IhbarBorclarPage() {
         onUpdateExtra={onUpdateExtra}
 
         onRemoveExtra={onRemoveExtra}
+
+        eklentiGunEsasi={form.eklentiGunEsasi}
+
+        eklentiDokumleri={form.eklentiDokumleri}
+
+        onEklentiDokumUygula={(key, dokum) =>
+          setForm((prev) => ({
+            ...prev,
+            eklentiGunEsasi: dokum.gunEsasi,
+            eklentiDokumleri: eklentiDokumuYaz(prev.eklentiDokumleri, key, dokum),
+          }))
+        }
 
         removingExtraIds={removingExtraIds}
 

@@ -7,6 +7,7 @@ import { ratesForAccrual, wageTaxKeepingModernTable } from "../../shared/histori
 import { calculateIncomeTaxForYear, calculateIncomeTaxWithBrackets } from "./incomeTax";
 import { round2 } from "./money";
 import type { NetBreakdown } from "./types";
+import { hesaplaHakkaniyetIndirimi, type HakkaniyetOrani } from "../../fazla-mesai/shared/hakkaniyetOrani";
 
 const SGK_ORAN = 0.14;
 const ISSIZLIK_ORAN = 0.01;
@@ -72,16 +73,16 @@ export function resolveTaxYear(dateRanges: { end: string }[]): number {
   return new Date().getFullYear();
 }
 
-export function calcHakkaniyet(brut: number): number {
-  return round2(brut / 3);
+export function calcHakkaniyet(brut: number, hakkaniyetOrani?: HakkaniyetOrani): number {
+  return round2(hesaplaHakkaniyetIndirimi(brut, hakkaniyetOrani));
 }
 
 export function parseSettleAmount(settleAmount: string): number {
   return Number(String(settleAmount ?? "").replace(/\./g, "").replace(",", ".").replace("₺", "").trim()) || 0;
 }
 
-export function calcMahsupSonuc(brut: number, settleAmount: string): number {
-  const hakkaniyet = calcHakkaniyet(brut);
+export function calcMahsupSonuc(brut: number, settleAmount: string, hakkaniyetOrani?: HakkaniyetOrani): number {
+  const hakkaniyet = calcHakkaniyet(brut, hakkaniyetOrani);
   const mahsup = parseSettleAmount(settleAmount);
   return round2(Math.max(0, brut - hakkaniyet - mahsup));
 }

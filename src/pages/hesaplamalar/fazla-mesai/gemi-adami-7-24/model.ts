@@ -3,6 +3,8 @@
  * İzolasyon: başka FM alt türüne import yok.
  */
 
+import { VARSAYILAN_HAKKANIYET_ORANI, type HakkaniyetOrani } from "../shared/hakkaniyetOrani";
+
 export type Mode270 = "none" | "simple" | "detailed";
 
 export type ExclusionType = "Yıllık İzin" | "Rapor" | "Diğer" | "UBGT" | "Puantaj/Bordro";
@@ -79,6 +81,7 @@ export type Gemi724FormSnapshot = {
   exclusions: ExclusionItem[];
   mode270: Mode270;
   mahsup: string;
+  hakkaniyetOrani: HakkaniyetOrani;
   notes: string;
   zamanasimi: ZamanasimiInfo;
   rowOverrides: Record<string, RowOverride>;
@@ -132,6 +135,7 @@ export function createEmptyForm(): Gemi724FormSnapshot {
     exclusions: [],
     mode270: "none",
     mahsup: "",
+    hakkaniyetOrani: VARSAYILAN_HAKKANIYET_ORANI,
     notes: "",
     zamanasimi: null,
     rowOverrides: {},

@@ -108,10 +108,10 @@ export function validateDateRange(startIso: string, endIso: string): string | nu
 
 /* ── Eklenti (son 12 ay toplamından günlük paya indirgeme) ── */
 
-/** Eklenti hesaplama: (12 aylık toplam / 360) × 30 */
-export function computeEklentiResult(months: string[]): number {
+/** Eklenti hesaplama: (12 aylık toplam / gün esası) × 30 — gün esası 360 (varsayılan) veya 365 */
+export function computeEklentiResult(months: string[], gunEsasi: 360 | 365 = 360): number {
   const sum = months.reduce((acc, v) => acc + parseMoneyInput(v), 0);
-  return (sum / 360) * 30;
+  return (sum / gunEsasi) * 30;
 }
 
 /* ── Giydirilmiş aylık ücret ── */

@@ -83,6 +83,7 @@ import {
 } from "./ubgtCetvelRows";
 import { createUbgtGuidedTour, getUbgtTourWelcome } from "./guidedTour";
 import styles from "./UbgtCalcPage.module.css";
+import { HakkaniyetOraniSecimi } from "../fazla-mesai/shared/HakkaniyetOraniSecimi";
 
 const HOLIDAY_NAME_BY_ID: Record<string, string> = Object.fromEntries(
   [
@@ -480,7 +481,10 @@ export default function UbgtCalcPage({ mode, title }: Props) {
     return calculateNet(displayBrutForNet, taxAccrualIso || taxYear);
   }, [result, displayBrutForNet, brutOverride, taxAccrualIso, taxYear]);
 
-  const hakkaniyet = useMemo(() => calcHakkaniyet(displayBrutForNet), [displayBrutForNet]);
+  const hakkaniyet = useMemo(
+    () => calcHakkaniyet(displayBrutForNet, form.hakkaniyetOrani),
+    [displayBrutForNet, form.hakkaniyetOrani],
+  );
   const settleNum = parseNum(form.settleAmount);
   const sonBrutAlacak = useMemo(
     () => calcSonBrutAlacak(displayBrutForNet, hakkaniyet, settleNum),
@@ -1740,7 +1744,10 @@ export default function UbgtCalcPage({ mode, title }: Props) {
                   <span>{formatMoney(displayBrutForNet)}₺</span>
                 </div>
                 <div className={styles.line}>
-                  <span>1/3 Hakkaniyet İndirimi</span>
+                  <HakkaniyetOraniSecimi
+                    value={form.hakkaniyetOrani}
+                    onChange={(v) => setForm((f) => ({ ...f, hakkaniyetOrani: v }))}
+                  />
                   <span className={styles.deduction}>-{formatMoney(hakkaniyet)}₺</span>
                 </div>
                 <label className={styles.field}>

@@ -79,6 +79,8 @@ import { insertExclusionsPreviewSection } from "../shared/exclusionsPreview";
 import { NotlarAccordion } from "../standart/NotlarAccordion";
 import { formatIsoDateRangeTR, formatIsoDateTR } from "@/utils/dateDisplay";
 import styles from "./Vardiya48FmPage.module.css";
+import { hakkaniyetOraniEtiketi } from "../shared/hakkaniyetOrani";
+import { HakkaniyetOraniSecimi } from "../shared/HakkaniyetOraniSecimi";
 
 const PAGE_TITLE = "48 Saat Çalışma Hesaplama";
 
@@ -579,7 +581,7 @@ export default function Vardiya48FmPage() {
         headers: ["Kalem", "Tutar"],
         rows: [
           ["Toplam Brüt Alacak", formatMoney(result.toplamFm)],
-          ["1/3 Hakkaniyet İndirimi", `-${formatMoney(result.hakkaniyetIndirimi)}`],
+          [`${hakkaniyetOraniEtiketi(form.hakkaniyetOrani)} Hakkaniyet İndirimi`, `-${formatMoney(result.hakkaniyetIndirimi)}`],
           ["Mahsuplaşma Tutarı", `-${formatMoney(result.mahsupTutari)}`],
           ["Son Brüt Alacak", formatMoney(result.sonNet)],
           ...equityNetPreviewRows({
@@ -594,7 +596,7 @@ export default function Vardiya48FmPage() {
       ],
       form.exclusions,
     );
-  }, [form.iseGiris, form.istenCikis, displayRows, result, equityNet]);
+  }, [form.iseGiris, form.istenCikis, form.hakkaniyetOrani, displayRows, result, equityNet]);
 
   return (
     <div className={`${styles.page} ${formSwap ? styles.formSwap : ""}`} data-page="fazla-mesai-vardiya-48">
@@ -867,7 +869,7 @@ export default function Vardiya48FmPage() {
             <h3>Hakkaniyet indirimi / mahsuplaşma</h3>
           </header>
           <p className={styles.panelHint}>
-            1/3 hakkaniyet indirimi ve mahsuplaşma brütten düşülür. Kalan son brüt, bu sayfanın brütten nete
+            {hakkaniyetOraniEtiketi(form.hakkaniyetOrani)} hakkaniyet indirimi ve mahsuplaşma brütten düşülür. Kalan son brüt, bu sayfanın brütten nete
             kesintileriyle nete çevrilir.
           </p>
           <div className={styles.totalsGrid}>
@@ -876,7 +878,7 @@ export default function Vardiya48FmPage() {
               <span>{formatMoney(result.toplamFm)} ₺</span>
             </div>
             <div>
-              <span>1/3 hakkaniyet indirimi</span>
+              <HakkaniyetOraniSecimi value={form.hakkaniyetOrani} onChange={(v) => setField("hakkaniyetOrani", v)} metin="hakkaniyet indirimi" />
               <span>−{formatMoney(result.hakkaniyetIndirimi)} ₺</span>
             </div>
             <div>
@@ -916,7 +918,7 @@ export default function Vardiya48FmPage() {
         </article>
 
         <section className={styles.card} style={{ animationDelay: "220ms" }}>
-          <NotlarAccordion />
+          <NotlarAccordion hakkaniyetOrani={form.hakkaniyetOrani} />
         </section>
       </div>
 

@@ -7,6 +7,7 @@ import type { ExcludedDay } from "../lib/types";
 import type { HaftaTatiliComputeResult } from "../lib/HaftaTatiliCalcPage";
 import type { BasinForm } from "./model";
 import { weekDayMultiplier } from "./model";
+import { hakkaniyetOraniEtiketi } from "../../fazla-mesai/shared/hakkaniyetOrani";
 
 export function buildBasinHtPreviewSections(opts: {
   form: BasinForm;
@@ -109,7 +110,7 @@ export function buildBasinHtPreviewSections(opts: {
     headers: ["Kalem", "Tutar"],
     rows: [
       ["Toplam Brüt Alacak", `${formatMoney(result.totalBrut)} ₺`],
-      ["1/3 Hakkaniyet İndirimi", `−${formatMoney(result.hakkaniyet)} ₺`],
+      [`${hakkaniyetOraniEtiketi(form.hakkaniyetOrani)} Hakkaniyet İndirimi`, `−${formatMoney(result.hakkaniyet)} ₺`],
       ["Mahsuplaşma Tutarı", `−${formatMoney(mahsupNum)} ₺`],
       ["Son Brüt Alacak", `${formatMoney(sonBrut)} ₺`],
       ...equityNetPreviewRows({

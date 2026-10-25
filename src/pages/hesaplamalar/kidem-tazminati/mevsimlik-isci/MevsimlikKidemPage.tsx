@@ -33,6 +33,14 @@ import {
 } from "./backendCase";
 import { listKidemSavedCases } from "../shared/listKidemCases";
 import { formatKidemMoneyFields } from "../shared/formatKidemMoneyFields";
+import { EklentiGunEsasiSecimi } from "../../shared/EklentiGunEsasiSecimi";
+import { normalizeEklentiGunEsasi } from "../../shared/eklentiGunEsasi";
+import {
+  eklentiDokumleriAnahtari,
+  eklentiDokumuYaz,
+  normalizeEklentiDokumleri,
+} from "../../shared/eklentiDokumu";
+import { useEklentiPenceresi } from "../../shared/useEklentiPenceresi";
 import {
   calculatePeriodDays,
   computeEklentiResult,
@@ -41,6 +49,7 @@ import {
   earliestPeriodStartISO,
   fmtCurrency,
   formatYilAyGun,
+  isKalanGunSinirDurumu,
   latestPeriodEndISO,
   parseNum,
   sanitizeMoneyTyping,
@@ -64,7 +73,7 @@ import tourStyles from "@/components/guided-tour/GuidedTour.module.css";
 
 const PAGE_TITLE = "Mevsimlik İşçi Kıdem Tazminatı";
 const NOTE_INFO =
-  "Çalışma süresi toplam gün üzerinden yıl/ay/gün'e çevrilir; günlük kıdem payı 360 günlük yıla göre hesaplanır. Net kıdem, brüt tutardan yalnızca çıkış tarihindeki damga vergisi düşülerek bulunur.";
+  "Çalışma süresi toplam gün üzerinden yıl/ay/gün'e çevrilir (365 gün = 1 yıl, 30 gün = 1 ay). Brüt kıdem tazminatı, kullanılacak brüt ücret × toplam gün / 365 formülüyle hesaplanır; ay ve gün payları da 365 günlük yıla göre bulunur. Net kıdem, brüt tutardan yalnızca çıkış tarihindeki damga vergisi düşülerek bulunur.";
 const EXTRA_HINT = "Ekstra Hesaplamalar (Prim, İkramiye, Yemek vb.)";
 const FIXED_EXTRA_IDS = ["prim", "ikramiye", "yol", "yemek", "diger"] as const;
 const FIXED_EXTRA_ROWS: Array<{ id: (typeof FIXED_EXTRA_IDS)[number]; label: string }> = [
@@ -95,6 +104,8 @@ function snapshotKey(s: MevsimlikFormSnapshot): string {
     d: s.diger,
     x: s.extras.map((it) => [it.name, it.value]),
     n: s.notes,
+    g: s.eklentiGunEsasi,
+    k: eklentiDokumleriAnahtari(s.eklentiDokumleri, s.extras),
   });
 }
 
@@ -207,8 +218,13 @@ export default function MevsimlikKidemPage() {
   const [formSwap, setFormSwap] = useState(false);
   const [removingExtraIds, setRemovingExtraIds] = useState<string[]>([]);
   const [removingPeriodIds, setRemovingPeriodIds] = useState<string[]>([]);
-  const [eklentiFor, setEklentiFor] = useState<EklentiTarget | null>(null);
-  const [eklentiMonths, setEklentiMonths] = useState<Record<string, string[]>>({});
+  const eklenti = useEklentiPenceresi<EklentiTarget>({
+    dokumler: form.eklentiDokumleri,
+    varsayilanGunEsasi: form.eklentiGunEsasi,
+    hesapla: computeEklentiResult,
+  });
+  const eklentiFor = eklenti.hedef;
+  const kapatEklenti = eklenti.kapat;
 
   const modalReturnFocusRef = useRef<HTMLElement | null>(null);
 
@@ -315,7 +331,7 @@ export default function MevsimlikKidemPage() {
       else if (showPreview) setShowPreview(false);
       else if (showCaseSaveModal) setShowCaseSaveModal(false);
       else if (showRecordsModal) setShowRecordsModal(false);
-      else if (eklentiFor) setEklentiFor(null);
+      else if (eklentiFor) kapatEklenti();
     };
     document.addEventListener("keydown", onKeyDown);
     return () => {
@@ -325,6 +341,7 @@ export default function MevsimlikKidemPage() {
     };
   }, [
     eklentiFor,
+    kapatEklenti,
     showRecordsModal,
     showCaseSaveModal,
     showPreview,
@@ -345,7 +362,6 @@ export default function MevsimlikKidemPage() {
     setForm(fresh);
     setCurrentRecordId(null);
     setCurrentRecordName(null);
-    setEklentiMonths({});
     setBaseline(snapshotKey(fresh));
   }, []);
 
@@ -381,6 +397,8 @@ export default function MevsimlikKidemPage() {
           name: String(it.name ?? ""),
           value: String(it.value ?? ""),
         })),
+        eklentiGunEsasi: normalizeEklentiGunEsasi(c.form.eklentiGunEsasi),
+        eklentiDokumleri: normalizeEklentiDokumleri(c.form.eklentiDokumleri),
       });
       setForm(nextForm);
       setCurrentRecordId(c.id);
@@ -397,7 +415,6 @@ export default function MevsimlikKidemPage() {
     setForm(nextForm);
     setCurrentRecordId(recordId);
     setCurrentRecordName(recordName);
-    setEklentiMonths({});
     setBaseline(snapshotKey(nextForm));
     triggerFormSwap();
   }, []);
@@ -531,24 +548,25 @@ export default function MevsimlikKidemPage() {
     setForm((prev) => ({ ...prev, extras: [...prev.extras, { id: newLocalId(), name: "", value: "" }] }));
   };
 
-  const openEklenti = (target: EklentiTarget) => {
-    const key = eklentiKey(target);
-    setEklentiMonths((prev) => (prev[key] ? prev : { ...prev, [key]: Array<string>(12).fill("") }));
-    setEklentiFor(target);
-  };
+  const openEklenti = (target: EklentiTarget) => eklenti.ac(target, eklentiKey(target));
 
   const applyEklenti = () => {
-    if (!eklentiFor) return;
-    const key = eklentiKey(eklentiFor);
-    const months = eklentiMonths[key] ?? Array<string>(12).fill("");
-    const value = computeEklentiResult(months) || 0;
+    const taslak = eklenti.taslak;
+    if (!taslak) return;
+    const value = computeEklentiResult(taslak.aylar, taslak.gunEsasi) || 0;
     const formatted = value.toFixed(2).replace(".", ",");
-    if (eklentiFor.kind === "field") {
-      updateFixedExtra(eklentiFor.field, formatted);
+    const target = taslak.target;
+    if (target.kind === "field") {
+      updateFixedExtra(target.field, formatted);
     } else {
-      updateExtra(eklentiFor.id, { value: formatted });
+      updateExtra(target.id, { value: formatted });
     }
-    setEklentiFor(null);
+    setForm((p) => ({
+      ...p,
+      eklentiGunEsasi: taslak.gunEsasi,
+      eklentiDokumleri: eklentiDokumuYaz(p.eklentiDokumleri, taslak.key, taslak),
+    }));
+    eklenti.kapat();
   };
 
   const collectExtraSetItems = (): ExtraItem[] => {
@@ -726,7 +744,13 @@ export default function MevsimlikKidemPage() {
       id: "tarih",
       title: "Tarih Bilgileri",
       headers: ["İşe Giriş", "İşten Çıkış", "Çalışma Süresi"],
-      rows: [[formatIsoTR(iseGiris), formatIsoTR(istenCikis), durationLabel]],
+      rows: [
+        [
+          formatIsoTR(iseGiris),
+          formatIsoTR(istenCikis),
+          isKalanGunSinirDurumu(result) ? `${durationLabel} (toplam ${result.toplamGun} gün)` : durationLabel,
+        ],
+      ],
     });
 
     const wageRows: string[][] = [
@@ -763,10 +787,13 @@ export default function MevsimlikKidemPage() {
       kidemRows.push([`${fmtCurrency(result.kullanilacakBrut)} × ${result.yil} yıl`, money(result.yilTutar)]);
     }
     if (result.ay > 0) {
-      kidemRows.push([`${fmtCurrency(result.kullanilacakBrut)} / 12 × ${result.ay} ay`, money(result.ayTutar)]);
+      kidemRows.push([
+        `${fmtCurrency(result.kullanilacakBrut)} / 365 × ${result.ay * 30} gün (${result.ay} ay)`,
+        money(result.ayTutar),
+      ]);
     }
     if (result.gun > 0) {
-      kidemRows.push([`${fmtCurrency(result.kullanilacakBrut)} / 360 × ${result.gun} gün`, money(result.gunTutar)]);
+      kidemRows.push([`${fmtCurrency(result.kullanilacakBrut)} / 365 × ${result.gun} gün`, money(result.gunTutar)]);
     }
     kidemRows.push(["Toplam Brüt Kıdem Tazminatı", money(result.brutKidem)]);
     sections.push({
@@ -792,10 +819,6 @@ export default function MevsimlikKidemPage() {
     return sections;
   }, [iseGiris, istenCikis, durationLabel, form, result, tavanUyariMetni]);
 
-  const eklentiResult = eklentiFor
-    ? computeEklentiResult(eklentiMonths[eklentiKey(eklentiFor)] ?? Array<string>(12).fill(""))
-    : 0;
-
   const getFixedValue = (id: FixedExtraId): string => form[id];
 
   return (
@@ -813,8 +836,8 @@ export default function MevsimlikKidemPage() {
           <div>
             <h1 className={styles.title}>{PAGE_TITLE}</h1>
             <p className={styles.desc}>
-              Birden fazla mevsimlik çalışma dönemini ekleyin; toplam gün 360 gün payıyla Yıl/Ay/Gün'e
-              çevrilir, tavan ve damga vergisi ile net kıdem tazminatı hesaplanır.
+              Birden fazla mevsimlik çalışma dönemini ekleyin; toplam gün 365 günlük yıl esasıyla Yıl/Ay/Gün'e
+              çevrilir, kıdem tazminatı toplam gün / 365 üzerinden, tavan ve damga vergisi ile net olarak hesaplanır.
             </p>
             <div className={styles.privacyBadge}>
               <ShieldCheck size={14} />
@@ -1164,7 +1187,7 @@ export default function MevsimlikKidemPage() {
               {result.ay > 0 ? (
                 <div className={styles.line}>
                   <span>
-                    {fmtCurrency(result.kullanilacakBrut)} / 12 × {result.ay} ay
+                    {fmtCurrency(result.kullanilacakBrut)} / 365 × {result.ay * 30} gün ({result.ay} ay)
                   </span>
                   <span>{fmtCurrency(result.ayTutar)} ₺</span>
                 </div>
@@ -1172,7 +1195,7 @@ export default function MevsimlikKidemPage() {
               {result.gun > 0 ? (
                 <div className={styles.line}>
                   <span>
-                    {fmtCurrency(result.kullanilacakBrut)} / 360 × {result.gun} gün
+                    {fmtCurrency(result.kullanilacakBrut)} / 365 × {result.gun} gün
                   </span>
                   <span>{fmtCurrency(result.gunTutar)} ₺</span>
                 </div>
@@ -1238,8 +1261,8 @@ export default function MevsimlikKidemPage() {
       </div>
 
       {/* Eklenti modalı */}
-      {eklentiFor ? (
-        <div className={styles.modalOverlay} role="presentation" onClick={() => setEklentiFor(null)}>
+      {eklenti.taslak ? (
+        <div className={styles.modalOverlay} role="presentation" onClick={eklenti.kapat}>
           <div
             className={`${styles.modalCard} ${styles.modalWide}`}
             role="dialog"
@@ -1249,31 +1272,25 @@ export default function MevsimlikKidemPage() {
             <h2 className={styles.modalTitle}>Eklenti hesaplama</h2>
             <p className={styles.modalDesc}>Son 12 aylık bordro tutarlarını girin.</p>
             <div className={styles.monthGrid}>
-              {(eklentiMonths[eklentiKey(eklentiFor)] ?? Array<string>(12).fill("")).map((value, index) => (
+              {eklenti.taslak.aylar.map((value, index) => (
                 <label key={index} className={styles.monthField}>
                   <span>{index + 1}. ay</span>
                   <input
                     inputMode="decimal"
                     value={value}
-                    onChange={(e) => {
-                      const v = sanitizeMoneyTyping(e.target.value);
-                      const key = eklentiKey(eklentiFor);
-                      setEklentiMonths((prev) => ({
-                        ...prev,
-                        [key]: (prev[key] ?? Array<string>(12).fill("")).map((m, i) => (i === index ? v : m)),
-                      }));
-                    }}
+                    onChange={(e) => eklenti.ayDegistir(index, sanitizeMoneyTyping(e.target.value))}
                     placeholder="1.250,00"
                   />
                 </label>
               ))}
             </div>
-            <p className={styles.formulaText}>Formül: (12 aylık toplam / 360) × 30</p>
+            <EklentiGunEsasiSecimi value={eklenti.taslak.gunEsasi} onChange={eklenti.gunEsasiDegistir} />
+            <p className={styles.formulaText}>Formül: (12 aylık toplam / {eklenti.taslak.gunEsasi}) × 30</p>
             <p className={styles.formulaResult}>
-              Sonuç: <strong>{fmtCurrency(eklentiResult)} ₺</strong>
+              Sonuç: <strong>{fmtCurrency(eklenti.sonuc)} ₺</strong>
             </p>
             <div className={styles.modalActions}>
-              <Button variant="soft" onClick={() => setEklentiFor(null)}>
+              <Button variant="soft" onClick={eklenti.kapat}>
                 İptal
               </Button>
               <Button variant="primary" onClick={applyEklenti}>

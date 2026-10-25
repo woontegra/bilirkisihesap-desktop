@@ -3,6 +3,8 @@
  * İzolasyon: başka FM alt türüne import yok.
  */
 
+import { VARSAYILAN_HAKKANIYET_ORANI, type HakkaniyetOrani } from "../shared/hakkaniyetOrani";
+
 export type Mode270 = "none" | "simple" | "detailed";
 export type SevenDayMode = "tatilli" | "tatilsiz";
 
@@ -92,6 +94,7 @@ export type GemiGunlukFormSnapshot = {
   mode270: Mode270;
   zamanasimi: ZamanasimiInfo;
   mahsup: string;
+  hakkaniyetOrani: HakkaniyetOrani;
   notes: string;
   rowOverrides: Record<string, RowOverride>;
   manualRows: PeriodRow[];
@@ -164,6 +167,7 @@ export function createEmptyForm(): GemiGunlukFormSnapshot {
     mode270: "none",
     zamanasimi: null,
     mahsup: "",
+    hakkaniyetOrani: VARSAYILAN_HAKKANIYET_ORANI,
     notes: "",
     rowOverrides: {},
     manualRows: [],

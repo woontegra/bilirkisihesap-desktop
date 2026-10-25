@@ -81,8 +81,8 @@ export function computeGemiHaftaTatili(form: GemiForm): GemiResult {
     year,
     accrualIso,
     net,
-    hakkaniyet: calcHakkaniyet(totalBrut),
-    mahsupSonuc: calcMahsupSonuc(totalBrut, form.settleAmount),
+    hakkaniyet: calcHakkaniyet(totalBrut, form.hakkaniyetOrani),
+    mahsupSonuc: calcMahsupSonuc(totalBrut, form.settleAmount, form.hakkaniyetOrani),
   };
 }
 

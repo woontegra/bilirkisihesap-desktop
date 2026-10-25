@@ -23,6 +23,7 @@ import {
   type YeraltiResult,
   type ZamanasimiInfo,
 } from "./model";
+import { hesaplaHakkaniyetIndirimi, type HakkaniyetOrani } from "../shared/hakkaniyetOrani";
 
 /* ── Sabitler ── */
 export const WEEKLY_LIMIT = 37.5;
@@ -567,6 +568,7 @@ export function computeTotalsFromRows(
   rows: { fm: number }[],
   exitYear: number,
   mahsupInput: string,
+  hakkaniyetOrani?: HakkaniyetOrani,
 ): Pick<
   YeraltiResult,
   | "totalFm"
@@ -587,7 +589,7 @@ export function computeTotalsFromRows(
   const gelirVergisi = fullNet.gelirVergisi;
   const damgaVergisi = fullNet.damgaVergisi;
   const netYillik = fullNet.net;
-  const hakkaniyetIndirimi = round2(totalFm / 3);
+  const hakkaniyetIndirimi = round2(hesaplaHakkaniyetIndirimi(totalFm, hakkaniyetOrani));
   const mahsupTutari = parseMoneyInput(mahsupInput);
   const sonNet = Math.max(0, round2(totalFm - hakkaniyetIndirimi - mahsupTutari));
   return {

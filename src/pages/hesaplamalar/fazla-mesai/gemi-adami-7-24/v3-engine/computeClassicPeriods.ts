@@ -7,6 +7,7 @@ import { getAsgariUcretByDate, getAsgariUcretPeriodsInRange } from "../asgariUcr
 import type { ExclusionItem, Gemi724FormSnapshot, PeriodRow, WitnessInput } from "../model";
 import { newLocalId } from "../model";
 import { MODE270_SIMPLE_REDUCTION_HOURS } from "../../shared/mode270Core";
+import { parseDecimalKatsayi } from "../../shared/katsayiForm";
 import { apply270ToPeriodsUnified } from "./lib/apply270ToPeriodsUnified";
 import { normalizeDate, normalizeLocalDate, toISODateLocal } from "./lib/dateHelpers";
 import { normalizeWitnessDateRanges } from "./lib/dateSegmentationCore";
@@ -131,7 +132,7 @@ function splitSegmentByAsgari(startISO: string, endISO: string): Array<{ start: 
 
 /** V3 `/api/fm/gemi-full-crew24` computeClassic çıktısı. */
 export function buildClassicPeriodRows(form: Gemi724FormSnapshot): PeriodRow[] {
-  const katsayi = Number(form.katSayi) > 0 ? Number(form.katSayi) : 1;
+  const katsayi = parseDecimalKatsayi(form.katSayi);
   const fmHours = FIXED_FM_HOURS;
   const exRanges = exclusionsForBackendWeeks(form.exclusions);
   const segments = calculateWitnessSegments(form);

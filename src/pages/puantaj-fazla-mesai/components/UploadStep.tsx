@@ -1,7 +1,8 @@
 import { useRef, useState } from "react";
-import { AlertTriangle, FileSpreadsheet, FileText, Sparkles, UploadCloud } from "lucide-react";
+import { AlertTriangle, Download, FileSpreadsheet, FileText, Sparkles, UploadCloud } from "lucide-react";
 import type { ParsedDocument, TableView } from "../model";
 import { ACCEPTED_FILE_TYPES } from "../parsing";
+import type { StandardTemplateIssue } from "../standardTemplate";
 import styles from "../PuantajFmPage.module.css";
 
 type Props = {
@@ -16,10 +17,15 @@ type Props = {
   onFile: (file: File) => void;
   onSheetChange: (index: number) => void;
   onHeaderRowChange: (index: number) => void;
+  templateError: string | null;
+  templateIssues: StandardTemplateIssue[];
+  onDownloadTemplate: () => void;
+  onTemplateFile: (file: File) => void;
 };
 
 export default function UploadStep(props: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const templateInputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
   const { doc, table } = props;
   const sheet = doc?.sheets[props.sheetIndex];
@@ -60,6 +66,69 @@ export default function UploadStep(props: Props) {
         Dijital PDF, Excel (.xlsx/.xls) veya CSV yükleyin. Dosya yalnızca bu cihazda işlenir; hiçbir sunucuya
         gönderilmez. PDF’de sütunlar seçilen başlık satırına göre hizalanır.
       </p>
+
+      <div className={styles.templateBar}>
+        <div className={styles.templateCopy}>
+          <span className={styles.templateTitle}>Standart Excel puantaj şablonu</span>
+          <span className={styles.templateSub}>
+            Şablonu indirip doldurun ve yükleyin; sütunlar otomatik eşleşir, doğrudan kontrol adımına geçilir.
+          </span>
+        </div>
+        <div className={styles.templateActions}>
+          <button type="button" className={styles.btn} onClick={props.onDownloadTemplate}>
+            <Download size={14} /> Şablonu İndir
+          </button>
+          <button
+            type="button"
+            className={`${styles.btn} ${styles.btnPrimary}`}
+            disabled={props.loading}
+            onClick={() => templateInputRef.current?.click()}
+          >
+            <UploadCloud size={14} /> Şablonu Yükle
+          </button>
+          <input
+            ref={templateInputRef}
+            type="file"
+            accept=".xlsx"
+            className={styles.hiddenInput}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) props.onTemplateFile(file);
+              e.target.value = "";
+            }}
+          />
+        </div>
+      </div>
+
+      {props.templateError && (
+        <div className={styles.templateErrorBox} role="alert">
+          <div className={styles.templateErrorHead}>
+            <AlertTriangle size={16} /> {props.templateError}
+          </div>
+          {props.templateIssues.length > 0 && (
+            <div className={styles.tableWrap}>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th>Excel Satırı</th>
+                    <th>Sütun</th>
+                    <th>Hata</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {props.templateIssues.map((issue, i) => (
+                    <tr key={`${issue.excelRow}-${issue.column}-${i}`}>
+                      <td>{issue.excelRow}</td>
+                      <td>{issue.column}</td>
+                      <td>{issue.message}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
 
       <div
         className={`${styles.dropzone} ${dragging ? styles.dropzoneActive : ""}`}

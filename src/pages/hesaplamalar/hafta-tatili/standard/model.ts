@@ -2,6 +2,7 @@
  * Hafta Tatili — Standart varyant modeli.
  */
 
+import { VARSAYILAN_HAKKANIYET_ORANI, type HakkaniyetOrani } from "../../fazla-mesai/shared/hakkaniyetOrani";
 import { newLocalId } from "../lib/money";
 import type { DateRange, ExcludedDay, TableRow } from "../lib/types";
 
@@ -15,6 +16,7 @@ export type StandardForm = {
   selectedHolidayIds: string[];
   rows: TableRow[];
   settleAmount: string;
+  hakkaniyetOrani: HakkaniyetOrani;
   globalCoefficient: number;
 };
 
@@ -54,6 +56,7 @@ export function createEmptyForm(): StandardForm {
     selectedHolidayIds: [],
     rows: [],
     settleAmount: "",
+    hakkaniyetOrani: VARSAYILAN_HAKKANIYET_ORANI,
     globalCoefficient: 1,
   };
 }
@@ -69,6 +72,7 @@ export function snapshotKey(form: StandardForm): string {
     sh: form.selectedHolidayIds,
     rows: form.rows,
     st: form.settleAmount,
+    ho: form.hakkaniyetOrani,
     gc: form.globalCoefficient,
   });
 }

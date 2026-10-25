@@ -29,6 +29,7 @@ import {
   parseKatsayi,
   validateDateRange,
 } from "../engine";
+import { hesaplaHakkaniyetIndirimi } from "../../shared/hakkaniyetOrani";
 
 const EMPTY_GROSS_NET: StandartGrossNet = {
   sgk: 0,
@@ -262,7 +263,7 @@ export function computeStandartFmResultV3(form: StandartFormSnapshot): StandartR
   const sgk = fullNet.sgk;
   const issizlik = fullNet.issizlik;
 
-  const hakkaniyetIndirimi = toplamFm / 3;
+  const hakkaniyetIndirimi = hesaplaHakkaniyetIndirimi(toplamFm, form.hakkaniyetOrani);
   const mahsupTutari = parseMahsup(form.mahsup);
   const sonNet = Math.max(0, toplamFm - hakkaniyetIndirimi - mahsupTutari);
 

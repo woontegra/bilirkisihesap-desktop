@@ -8,6 +8,7 @@ import { newLocalId } from "../lib/caseStorage";
 import { ihbarBasinBackend } from "../lib/ihbarBackendInstances";
 import { makeIhbarBackendConfig } from "../lib/makeIhbarBackendConfig";
 import { IhbarPageView, type WageFieldKey } from "../lib/IhbarPageView";
+import { eklentiDokumuYaz } from "../../shared/eklentiDokumu";
 import { useIhbarCaseBackend } from "../lib/useIhbarCaseBackend";
 import type { ExtraItem } from "../lib/types";
 import { clampYear, computeIhbarBasinResult, formatDateTR, formatMoney, isDateOrderInvalid, parseNum } from "./engine";
@@ -241,6 +242,15 @@ export default function IhbarBasinPage() {
         onAddExtra={onAddExtra}
         onUpdateExtra={onUpdateExtra}
         onRemoveExtra={onRemoveExtra}
+        eklentiGunEsasi={form.eklentiGunEsasi}
+        eklentiDokumleri={form.eklentiDokumleri}
+        onEklentiDokumUygula={(key, dokum) =>
+          setForm((prev) => ({
+            ...prev,
+            eklentiGunEsasi: dokum.gunEsasi,
+            eklentiDokumleri: eklentiDokumuYaz(prev.eklentiDokumleri, key, dokum),
+          }))
+        }
         removingExtraIds={removingExtraIds}
         toplamBrut={result.toplamBrut}
         ihbarSuresiLabel={result.ihbarSuresiLabel}

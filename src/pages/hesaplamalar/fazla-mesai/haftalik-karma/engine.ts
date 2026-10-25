@@ -28,6 +28,7 @@ import {
   applyMode270DetailedHireYear,
   applyMode270SimpleToRows,
 } from "../shared/mode270Core";
+import { parseDecimalKatsayi } from "../shared/katsayiForm";
 import { buildMergedWitnessSegments } from "./witnessSegments";
 import {
   calculateLegalBreak,
@@ -74,8 +75,7 @@ export function formatMoney(value: number): string {
 export { sanitizeMoneyTyping } from "@/utils/moneyInput";
 
 export function parseKatsayi(value: string): number {
-  const n = parseMoneyInput(value);
-  return n > 0 ? n : 1;
+  return parseDecimalKatsayi(value);
 }
 
 /* ── Tarih ── */

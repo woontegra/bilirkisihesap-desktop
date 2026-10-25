@@ -32,6 +32,7 @@ import {
   type RowOverride,
   type SevenDayMode,
 } from "./model";
+import { hesaplaHakkaniyetIndirimi, type HakkaniyetOrani } from "../shared/hakkaniyetOrani";
 
 export {
   bilirkisiRoundWeeklyTotalHours,
@@ -374,6 +375,7 @@ export function computeTotalsFromRows(
   rows: { fm: number }[],
   exitYear: number,
   mahsupInput: string,
+  hakkaniyetOrani?: HakkaniyetOrani,
 ): Pick<
   GemiGunlukResult,
   | "toplamFm"
@@ -394,7 +396,7 @@ export function computeTotalsFromRows(
   const gelirVergisi = fullNet.gelirVergisi;
   const damgaVergisi = fullNet.damgaVergisi;
   const netYillik = fullNet.net;
-  const hakkaniyetIndirimi = toplamFm / 3;
+  const hakkaniyetIndirimi = hesaplaHakkaniyetIndirimi(toplamFm, hakkaniyetOrani);
   const mahsupTutari = parseMoneyInput(mahsupInput);
   const sonNet = Math.max(0, toplamFm - hakkaniyetIndirimi - mahsupTutari);
   return {
@@ -416,7 +418,7 @@ export function computeTotalsFromRows(
 export function computeGemiGunlukResult(form: GemiGunlukFormSnapshot): GemiGunlukResult {
   const piped = runGemiGunlukV3Pipeline(form);
   const exitYear = fmTaxYear(form.istenCikis);
-  const totals = computeTotalsFromRows(piped.rows, exitYear, form.mahsup);
+  const totals = computeTotalsFromRows(piped.rows, exitYear, form.mahsup, form.hakkaniyetOrani);
 
   return {
     dailyGrossHours: piped.dailyGrossHours,

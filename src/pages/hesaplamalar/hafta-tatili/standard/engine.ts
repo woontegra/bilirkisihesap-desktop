@@ -87,8 +87,8 @@ export function computeStandardHaftaTatili(form: StandardForm, weekMultiplier = 
   const year = resolveTaxYear(form.dateRanges);
   const accrualIso = resolveTaxAccrualIso(form.dateRanges) || undefined;
   const net = calculateNetFromBrut(totalBrut, accrualIso || year);
-  const hakkaniyet = calcHakkaniyet(totalBrut);
-  const mahsupSonuc = calcMahsupSonuc(totalBrut, form.settleAmount);
+  const hakkaniyet = calcHakkaniyet(totalBrut, form.hakkaniyetOrani);
+  const mahsupSonuc = calcMahsupSonuc(totalBrut, form.settleAmount, form.hakkaniyetOrani);
 
   return { rows, totalBrut, year, accrualIso, net, hakkaniyet, mahsupSonuc };
 }

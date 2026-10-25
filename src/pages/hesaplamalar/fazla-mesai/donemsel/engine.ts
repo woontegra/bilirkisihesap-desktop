@@ -9,6 +9,7 @@ import {
   applyMode270DetailedHireYear,
   fmHoursAfterYargitay270Simple,
 } from "../shared/mode270Core";
+import { parseDecimalKatsayi } from "../shared/katsayiForm";
 import {
   DAMGA_ORAN,
   FM_DENOMINATOR,
@@ -74,8 +75,7 @@ export const fmtCurrency = formatMoney;
 export { sanitizeMoneyTyping } from "@/utils/moneyInput";
 
 export function parseKatsayi(value: string): number {
-  const n = parseMoneyInput(value);
-  return n > 0 ? n : 1;
+  return parseDecimalKatsayi(value);
 }
 
 /* ── Tarih ── */

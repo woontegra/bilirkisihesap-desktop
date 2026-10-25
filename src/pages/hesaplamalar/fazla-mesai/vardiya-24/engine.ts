@@ -25,6 +25,7 @@ import {
 } from "./model";
 import { parseISODateLocal } from "./workDays24";
 import { buildMergedWitnessSegments } from "./witnessSegments";
+import { hesaplaHakkaniyetIndirimi, type HakkaniyetOrani } from "../shared/hakkaniyetOrani";
 
 /* ── yardımcılar ── */
 
@@ -590,6 +591,7 @@ export function computeTotalsFromRows(
   rows: { fm: number }[],
   exitYear: number,
   mahsupInput: string,
+  hakkaniyetOrani?: HakkaniyetOrani,
 ): Omit<Vardiya24Result, "rows" | "warnings" | "dateError"> {
   const toplamFm = rows.reduce((sum, r) => sum + (Number(r.fm) || 0), 0);
   const fullNet = netFromGrossFm(toplamFm, exitYear);
@@ -598,7 +600,7 @@ export function computeTotalsFromRows(
   const gelirVergisi = fullNet.gelirVergisi;
   const damgaVergisi = fullNet.damgaVergisi;
   const netYillik = fullNet.net;
-  const hakkaniyetIndirimi = toplamFm / 3;
+  const hakkaniyetIndirimi = hesaplaHakkaniyetIndirimi(toplamFm, hakkaniyetOrani);
   const mahsupTutari = parseMoneyInput(mahsupInput);
   const sonNet = Math.max(0, toplamFm - hakkaniyetIndirimi - mahsupTutari);
   return {
@@ -721,7 +723,7 @@ export function computeVardiya24Result(form: Vardiya24FormSnapshot): Vardiya24Re
   );
 
   const exitYear = fmTaxYear(form.istenCikis);
-  const totals = computeTotalsFromRows(withOverrides, exitYear, form.mahsup);
+  const totals = computeTotalsFromRows(withOverrides, exitYear, form.mahsup, form.hakkaniyetOrani);
 
   return {
     rows: withOverrides,

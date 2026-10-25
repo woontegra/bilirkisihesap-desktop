@@ -83,6 +83,8 @@ import {
 } from "./model";
 import { isCetvelRowVisible } from "../cetvelDisplay";
 import styles from "./YeraltiFmPage.module.css";
+import { hakkaniyetOraniEtiketi } from "../shared/hakkaniyetOrani";
+import { HakkaniyetOraniSecimi } from "../shared/HakkaniyetOraniSecimi";
 
 const PAGE_TITLE = "Yeraltı İşçileri Fazla Mesai Hesaplama";
 const WEEKDAY_OPTIONS: { value: number; label: string }[] = [
@@ -617,7 +619,7 @@ export default function YeraltiFmPage() {
       headers: ["Kalem", "Tutar"],
       rows: [
         ["Toplam Brüt Alacak", money(result.totalFm)],
-        ["1/3 Hakkaniyet İndirimi", `-${money(result.hakkaniyetIndirimi)}`],
+        [`${hakkaniyetOraniEtiketi(form.hakkaniyetOrani)} Hakkaniyet İndirimi`, `-${money(result.hakkaniyetIndirimi)}`],
         ["Mahsuplaşma Tutarı", `-${money(result.mahsupTutari)}`],
         ["Son Brüt Alacak", money(result.sonNet)],
         ...equityNetPreviewRows({
@@ -1008,7 +1010,7 @@ export default function YeraltiFmPage() {
               <span>{formatMoney(result.totalFm)} ₺</span>
             </div>
             <div className={styles.line}>
-              <span>1/3 Hakkaniyet</span>
+              <HakkaniyetOraniSecimi value={form.hakkaniyetOrani} onChange={(v) => setField("hakkaniyetOrani", v)} metin="Hakkaniyet" />
               <span className={styles.deduction}>-{formatMoney(result.hakkaniyetIndirimi)} ₺</span>
             </div>
             <div className={`${styles.line} ${styles.mahsupLine}`}>
@@ -1055,7 +1057,7 @@ export default function YeraltiFmPage() {
         </article>
 
         <section className={styles.card} style={{ animationDelay: "220ms" }}>
-          <NotlarAccordion />
+          <NotlarAccordion hakkaniyetOrani={form.hakkaniyetOrani} />
         </section>
       </div>
 

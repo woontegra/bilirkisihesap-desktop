@@ -80,6 +80,8 @@ import {
   type Witness,
 } from "./model";
 import styles from "./GemiGunlukFmPage.module.css";
+import { hakkaniyetOraniEtiketi } from "../shared/hakkaniyetOrani";
+import { HakkaniyetOraniSecimi } from "../shared/HakkaniyetOraniSecimi";
 
 const PAGE_TITLE = "Gemi Adamı — Günlük Çalışan Fazla Mesai";
 const MODE_BLURB =
@@ -590,7 +592,7 @@ export default function GemiGunlukFmPage() {
         headers: ["Kalem", "Tutar"],
         rows: [
           ["Toplam Brüt Alacak", money(result.toplamFm)],
-          ["1/3 Hakkaniyet İndirimi", `-${money(result.hakkaniyetIndirimi)}`],
+          [`${hakkaniyetOraniEtiketi(form.hakkaniyetOrani)} Hakkaniyet İndirimi`, `-${money(result.hakkaniyetIndirimi)}`],
           ["Mahsuplaşma Tutarı", `-${money(result.mahsupTutari)}`],
           ["Son Brüt Alacak", money(result.sonNet)],
           ...equityNetPreviewRows({
@@ -1002,7 +1004,7 @@ export default function GemiGunlukFmPage() {
               <span>{formatMoney(result.toplamFm)} ₺</span>
             </div>
             <div className={styles.line}>
-              <span>1/3 hakkaniyet indirimi</span>
+              <HakkaniyetOraniSecimi value={form.hakkaniyetOrani} onChange={(v) => setField("hakkaniyetOrani", v)} metin="hakkaniyet indirimi" />
               <span className={styles.deduction}>-{formatMoney(result.hakkaniyetIndirimi)} ₺</span>
             </div>
             <div className={styles.line}>
@@ -1027,7 +1029,7 @@ export default function GemiGunlukFmPage() {
         </article>
 
         <section className={styles.card} style={{ animationDelay: "220ms" }}>
-          <NotlarAccordion />
+          <NotlarAccordion hakkaniyetOrani={form.hakkaniyetOrani} />
         </section>
       </div>
 

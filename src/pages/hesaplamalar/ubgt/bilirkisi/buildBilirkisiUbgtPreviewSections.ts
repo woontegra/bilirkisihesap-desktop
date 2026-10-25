@@ -5,6 +5,7 @@ import { formatDateTR, formatMoney } from "../engine";
 import type { UbgtForm } from "../model";
 import type { CetvelDisplayRow } from "../ubgtCetvelRows";
 import type { UbgtNetResult } from "../engine";
+import { hakkaniyetOraniEtiketi } from "../../fazla-mesai/shared/hakkaniyetOrani";
 
 export function buildBilirkisiUbgtPreviewSections(opts: {
   form: UbgtForm;
@@ -103,7 +104,7 @@ export function buildBilirkisiUbgtPreviewSections(opts: {
       headers: ["Kalem", "Tutar"],
       rows: [
         ["Toplam Brüt Alacak", `${formatMoney(displayBrutForNet)} ₺`],
-        ["1/3 Hakkaniyet İndirimi", `−${formatMoney(hakkaniyet)} ₺`],
+        [`${hakkaniyetOraniEtiketi(form.hakkaniyetOrani)} Hakkaniyet İndirimi`, `−${formatMoney(hakkaniyet)} ₺`],
         ["Mahsuplaşma Tutarı", `−${formatMoney(Number.isFinite(settleNum) ? settleNum : 0)} ₺`],
         ["Son Brüt Alacak", `${formatMoney(sonBrutAlacak)} ₺`],
         ...equityNetPreviewRows({

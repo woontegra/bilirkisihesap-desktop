@@ -19,6 +19,7 @@ import { runDonemselHaftalikV3Pipeline } from "./pipeline";
 import type { DonemselWitness, SeasonalPattern } from "./donemsel/types";
 import type { DonemselHaftalikDeductionMeta } from "./donemsel-haftalik/expandDonemselHaftalikRowsForDeductions";
 import { parseKatsayi, validateDateRange } from "../engine";
+import { hesaplaHakkaniyetIndirimi } from "../../shared/hakkaniyetOrani";
 
 export type FmGrossNet = {
   sgk: number;
@@ -255,7 +256,7 @@ export function computeDonemselHaftalikResultV3(
   const sgk = fullNet.sgk;
   const issizlik = fullNet.issizlik;
 
-  const hakkaniyetOneri = toplamFm / 3;
+  const hakkaniyetOneri = hesaplaHakkaniyetIndirimi(toplamFm, form.hakkaniyetOrani);
   const mahsupTutari = parseMahsup(form.mahsup);
   const mahsupSonrasiNet = Math.max(0, toplamFm - hakkaniyetOneri - mahsupTutari);
 

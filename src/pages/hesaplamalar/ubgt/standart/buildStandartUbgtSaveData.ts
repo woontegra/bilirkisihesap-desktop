@@ -1,6 +1,7 @@
 /**
  * Standart UBGT — V3 `UbgtStandartPage` kayıt şekline uyumlu payload.
  */
+import { normalizeHakkaniyetOrani } from "../../fazla-mesai/shared/hakkaniyetOrani";
 import type { CalcSaveResult } from "../../shared/calcBackendCrud";
 import type { UbgtForm } from "../model";
 import type { CetvelDisplayRow } from "../ubgtCetvelRows";
@@ -95,6 +96,7 @@ export function buildStandartUbgtSaveData(
   const v3Form = {
     ...form,
     mode: "standart" as const,
+    hakkaniyetOrani: normalizeHakkaniyetOrani(form.hakkaniyetOrani),
     workerPeriods: form.dateRanges,
     selectedHolidays: form.selectedHolidayIds,
     excludedDays: form.ubgtExcludedDays,

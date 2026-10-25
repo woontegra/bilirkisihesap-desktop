@@ -6,6 +6,7 @@ import { computePuantajFm, DEFAULT_CALC_SETTINGS, inferCalcDateRange } from "./e
 import { buildOffAuditReport } from "./offAudit";
 import { parseFile } from "./parsing";
 import { guessGeometryHeaderIndex } from "./pdfLayout";
+import { downloadStandardTemplate, readStandardTemplate, type StandardTemplateIssue } from "./standardTemplate";
 import {
   buildSignature,
   deleteTemplate,
@@ -78,6 +79,8 @@ export default function PuantajFmPage() {
   const [doc, setDoc] = useState<ParsedDocument | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [templateError, setTemplateError] = useState<string | null>(null);
+  const [templateIssues, setTemplateIssues] = useState<StandardTemplateIssue[]>([]);
   const [sheetIndex, setSheetIndex] = useState(0);
   const [headerRowIndex, setHeaderRowIndex] = useState(0);
 
@@ -196,6 +199,8 @@ export default function PuantajFmPage() {
   const handleFile = useCallback(async (file: File) => {
     setLoading(true);
     setError(null);
+    setTemplateError(null);
+    setTemplateIssues([]);
     try {
       const parsed = await parseFile(file);
       if (parsed.kind === "unknown") {
@@ -230,6 +235,63 @@ export default function PuantajFmPage() {
       setLoading(false);
     }
   }, []);
+
+  /* ── Standart Excel şablonu ── */
+  const handleDownloadTemplate = useCallback(() => {
+    try {
+      downloadStandardTemplate();
+    } catch {
+      setTemplateError("Şablon oluşturulamadı. Lütfen tekrar deneyin.");
+      setTemplateIssues([]);
+    }
+  }, []);
+
+  const handleTemplateFile = useCallback(
+    async (file: File) => {
+      setLoading(true);
+      setError(null);
+      setTemplateError(null);
+      setTemplateIssues([]);
+      try {
+        const result = readStandardTemplate(await file.arrayBuffer(), file.name);
+        if (!result.ok) {
+          setTemplateError(result.error);
+          setTemplateIssues(result.issues);
+          return;
+        }
+        smartAbortRef.current?.abort();
+        lastHeaderSig.current = result.table.headers.join("|") + "#0#0";
+        setDoc(result.doc);
+        setSheetIndex(0);
+        setHeaderRowIndex(0);
+        setMappings(result.mappings);
+        setConstants({});
+        setCodeMap({});
+        setActiveTemplateId(null);
+        setSuggestedTemplateName(null);
+        setSmartAnalysis(null);
+        setSmartImportApplied(false);
+        setSmartUiMode("hidden");
+        setSmartImportWarning(null);
+        preparedSmartRows.current = null;
+        setResults([]);
+        const built = buildStandardRows(result.table, {
+          mappings: result.mappings,
+          constants: {},
+          codeMap: {},
+          headers: result.table.headers,
+        }).map(migrateStandardRow);
+        setRows(built);
+        setSelectedKeys(groupByPersonel(built).map((g) => g.key));
+        reachStep("review");
+      } catch {
+        setTemplateError("Excel dosyası okunamadı. Lütfen “Şablonu İndir” ile alınan dosyayı kullanın.");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [reachStep],
+  );
 
   /* ── Eşleştirme ── */
   const handleMappingChange = useCallback((columnIndex: number, next: Partial<ColumnMapping>) => {
@@ -567,6 +629,8 @@ export default function PuantajFmPage() {
     setMaxReached(0);
     setDoc(null);
     setError(null);
+    setTemplateError(null);
+    setTemplateIssues([]);
     setMappings([]);
     setConstants({});
     setCodeMap({});
@@ -682,6 +746,10 @@ export default function PuantajFmPage() {
           onFile={handleFile}
           onSheetChange={setSheetIndex}
           onHeaderRowChange={setHeaderRowIndex}
+          templateError={templateError}
+          templateIssues={templateIssues}
+          onDownloadTemplate={handleDownloadTemplate}
+          onTemplateFile={handleTemplateFile}
         />
       )}
 

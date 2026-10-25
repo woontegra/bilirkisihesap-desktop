@@ -1,6 +1,7 @@
 /**
  * Basın İş Hafta Tatili — V3 kayıt payload uyumu.
  */
+import { normalizeHakkaniyetOrani } from "../../fazla-mesai/shared/hakkaniyetOrani";
 import type { CalcSaveResult } from "../../shared/calcBackendCrud";
 import type { TableRow } from "../lib/types";
 import type { BasinForm } from "./model";
@@ -118,6 +119,7 @@ export function buildBasinHtSaveData(
     calculatedHaftaTatiliDays: totalDays,
     settlement,
     settleAmount: form.settleAmount,
+    hakkaniyetOrani: normalizeHakkaniyetOrani(form.hakkaniyetOrani),
   };
 
   if (result.rowOverrides && Object.keys(result.rowOverrides).length > 0) {

@@ -3,6 +3,8 @@
  * motoru %100 lokaldir; başka bir fazla mesai alt türüne referans vermez.
  */
 
+import { VARSAYILAN_HAKKANIYET_ORANI, type HakkaniyetOrani } from "../shared/hakkaniyetOrani";
+
 export type Mode270 = "none" | "simple" | "detailed";
 
 export type SevenDayMode = "tatilli" | "tatilsiz";
@@ -94,6 +96,7 @@ export type StandartFormSnapshot = {
   katSayi: string;
   mode270: Mode270;
   mahsup: string;
+  hakkaniyetOrani: HakkaniyetOrani;
   notes: string;
   zamanasimi: ZamanasimiInfo;
   /** Cetvel satırlarında hafta/ücret/FM saati/tarih alanlarına yapılan manuel düzeltmeler (satır id → düzeltme). */
@@ -173,6 +176,7 @@ export function createEmptyForm(): StandartFormSnapshot {
     katSayi: "1",
     mode270: "none",
     mahsup: "",
+    hakkaniyetOrani: VARSAYILAN_HAKKANIYET_ORANI,
     notes: "",
     zamanasimi: null,
     rowOverrides: {},

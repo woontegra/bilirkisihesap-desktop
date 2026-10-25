@@ -4,10 +4,9 @@
  * takvimiyle uyumludur. Bu dosya yalnızca bu klasöre aittir; başka FM alt
  * türüne referans vermez.
  *
- * Dini bayram tarihleri 2010–2025 için kesindir (Diyanet takvimi). 2026 dini
- * bayram tarihleri bu kopya oluşturulduğunda resmen ilan edilmemişti; bu
- * nedenle 2026 için yalnızca sabit (resmî/millî) tatiller listelenir — UBGT
- * picker'da bu durum bir bilgi notu ile belirtilir.
+ * Dini bayram tarihleri 1996–2026 için doğrulanmıştır (Diyanet takvimi ve
+ * dönemin resmî tatil listeleri). 1 Mayıs 2009'dan, 15 Temmuz 2017'den itibaren
+ * listelenir.
  */
 
 export type UbgtCatalogEntry = {
@@ -55,7 +54,47 @@ const RELIGIOUS_ANCHORS: { year: number; ramazanArife: string; kurbanArife: stri
   { year: 2022, ramazanArife: "05-01", kurbanArife: "07-08" },
   { year: 2023, ramazanArife: "04-20", kurbanArife: "06-27" },
   { year: 2024, ramazanArife: "04-09", kurbanArife: "06-15" },
-  { year: 2025, ramazanArife: "03-30", kurbanArife: "06-05" },
+  { year: 2025, ramazanArife: "03-29", kurbanArife: "06-05" },
+];
+
+/**
+ * RELIGIOUS_ANCHORS dışındaki dini bayram dönemleri (1996–2009 ve 2026); bayram günleri arifeden türetilir.
+ * Dönemler yıla bağlı değildir: aynı yılda iki bayram olabilir (2000 Ramazan, 2006 Kurban) ve bayram
+ * günleri yıl sınırını aşabilir (30.12.2006–03.01.2007).
+ */
+const EK_RELIGIOUS_PERIODS: { kind: "ramazan" | "kurban"; arife: string }[] = [
+  { kind: "ramazan", arife: "1996-02-19" },
+  { kind: "kurban", arife: "1996-04-27" },
+  { kind: "ramazan", arife: "1997-02-08" },
+  { kind: "kurban", arife: "1997-04-17" },
+  { kind: "ramazan", arife: "1998-01-28" },
+  { kind: "kurban", arife: "1998-04-06" },
+  { kind: "ramazan", arife: "1999-01-18" },
+  { kind: "kurban", arife: "1999-03-27" },
+  { kind: "ramazan", arife: "2000-01-07" },
+  { kind: "kurban", arife: "2000-03-15" },
+  { kind: "ramazan", arife: "2000-12-26" },
+  { kind: "kurban", arife: "2001-03-04" },
+  { kind: "ramazan", arife: "2001-12-15" },
+  { kind: "kurban", arife: "2002-02-21" },
+  { kind: "ramazan", arife: "2002-12-04" },
+  { kind: "kurban", arife: "2003-02-10" },
+  { kind: "ramazan", arife: "2003-11-24" },
+  { kind: "kurban", arife: "2004-01-31" },
+  { kind: "ramazan", arife: "2004-11-13" },
+  { kind: "kurban", arife: "2005-01-19" },
+  { kind: "ramazan", arife: "2005-11-02" },
+  { kind: "kurban", arife: "2006-01-09" },
+  { kind: "ramazan", arife: "2006-10-22" },
+  { kind: "kurban", arife: "2006-12-30" },
+  { kind: "ramazan", arife: "2007-10-11" },
+  { kind: "kurban", arife: "2007-12-19" },
+  { kind: "ramazan", arife: "2008-09-29" },
+  { kind: "kurban", arife: "2008-12-07" },
+  { kind: "ramazan", arife: "2009-09-19" },
+  { kind: "kurban", arife: "2009-11-26" },
+  { kind: "ramazan", arife: "2026-03-19" },
+  { kind: "kurban", arife: "2026-05-26" },
 ];
 
 function addIsoDays(iso: string, amount: number): string {
@@ -86,10 +125,29 @@ function buildReligiousEntriesForYear(year: number): UbgtCatalogEntry[] {
   ];
 }
 
-export const UBGT_CATALOG_MIN_YEAR = 2010;
+function buildReligiousEntriesForPeriod(period: { kind: "ramazan" | "kurban"; arife: string }): UbgtCatalogEntry[] {
+  const { arife } = period;
+  if (period.kind === "ramazan") {
+    return [
+      { date: arife, holidayId: "ramazan-arife", label: "Ramazan Bayramı Arife", days: 0.5 },
+      { date: addIsoDays(arife, 1), holidayId: "ramazan-1", label: "Ramazan Bayramı 1. Gün", days: 1 },
+      { date: addIsoDays(arife, 2), holidayId: "ramazan-2", label: "Ramazan Bayramı 2. Gün", days: 1 },
+      { date: addIsoDays(arife, 3), holidayId: "ramazan-3", label: "Ramazan Bayramı 3. Gün", days: 1 },
+    ];
+  }
+  return [
+    { date: arife, holidayId: "kurban-arife", label: "Kurban Bayramı Arife", days: 0.5 },
+    { date: addIsoDays(arife, 1), holidayId: "kurban-1", label: "Kurban Bayramı 1. Gün", days: 1 },
+    { date: addIsoDays(arife, 2), holidayId: "kurban-2", label: "Kurban Bayramı 2. Gün", days: 1 },
+    { date: addIsoDays(arife, 3), holidayId: "kurban-3", label: "Kurban Bayramı 3. Gün", days: 1 },
+    { date: addIsoDays(arife, 4), holidayId: "kurban-4", label: "Kurban Bayramı 4. Gün", days: 1 },
+  ];
+}
+
+export const UBGT_CATALOG_MIN_YEAR = 1996;
 export const UBGT_CATALOG_MAX_YEAR = 2026;
 /** Dini bayram tarihleri bu yıldan sonrası için katalogda henüz mevcut değil. */
-export const UBGT_RELIGIOUS_DATA_MAX_YEAR = 2025;
+export const UBGT_RELIGIOUS_DATA_MAX_YEAR = 2026;
 
 /** [startISO, endISO] aralığındaki tüm UBGT günlerini (sabit + dini) döner, tarih sırasıyla. */
 export function getUbgtCatalogForRange(startISO: string, endISO: string): UbgtCatalogEntry[] {
@@ -113,8 +171,30 @@ export function getUbgtCatalogForRange(startISO: string, endISO: string): UbgtCa
       }
     }
   }
+  for (const period of EK_RELIGIOUS_PERIODS) {
+    for (const entry of buildReligiousEntriesForPeriod(period)) {
+      if (entry.date >= s && entry.date <= e) out.push(entry);
+    }
+  }
 
-  return out.sort((a, b) => a.date.localeCompare(b.date));
+  out.sort((a, b) => a.date.localeCompare(b.date));
+
+  // Picker seçimi tarihe göre tutulur; aynı güne denk gelen tatiller (ör. 01.01.2007
+  // Yılbaşı + Kurban 2. Gün) tek satırda birleştirilir.
+  const merged: UbgtCatalogEntry[] = [];
+  for (const entry of out) {
+    const prev = merged[merged.length - 1];
+    if (prev && prev.date === entry.date) {
+      merged[merged.length - 1] = {
+        ...prev,
+        label: `${prev.label} + ${entry.label}`,
+        days: Math.max(prev.days, entry.days),
+      };
+    } else {
+      merged.push(entry);
+    }
+  }
+  return merged;
 }
 
 export type UbgtYearGroup = { year: number; entries: UbgtCatalogEntry[] };

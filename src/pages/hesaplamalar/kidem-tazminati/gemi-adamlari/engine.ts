@@ -59,10 +59,10 @@ export function computeWorkDuration(startISO: string, endISO: string): WorkDurat
 
 /* ── Eklenti (son 12 ay toplamından günlük paya indirgeme) ── */
 
-/** Eklenti hesaplama: (12 aylık toplam / 360) × 30 — V3 EklentiModal ile aynı */
-export function computeEklentiResult(months: string[]): number {
+/** Eklenti hesaplama: (12 aylık toplam / gün esası) × 30 — gün esası 360 (varsayılan, V3 EklentiModal ile aynı) veya 365 */
+export function computeEklentiResult(months: string[], gunEsasi: 360 | 365 = 360): number {
   const sum = months.reduce((acc, v) => acc + parseNum(v), 0);
-  return (sum / 360) * 30;
+  return (sum / gunEsasi) * 30;
 }
 
 /** V3: yıl===0 ve yıl×365+ay×30+gün < 365 ise kıdem hakkı doğmaz */

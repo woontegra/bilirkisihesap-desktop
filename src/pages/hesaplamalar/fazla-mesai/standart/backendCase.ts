@@ -51,6 +51,7 @@ import {
 } from "./model";
 
 import { computeStandartFmResult } from "./engine";
+import { normalizeHakkaniyetOrani } from "../shared/hakkaniyetOrani";
 
 
 
@@ -434,6 +435,8 @@ export function buildStandartSaveData(
 
     mahsuplasmaMiktari: form.mahsup,
 
+    hakkaniyetOrani: normalizeHakkaniyetOrani(form.hakkaniyetOrani),
+
   };
 
 
@@ -662,6 +665,8 @@ export function mapStandartFormFromBackend(
       mode270,
 
       mahsup: str(form.mahsup ?? form.mahsuplasmaMiktari ?? payload.mahsuplasmaMiktari),
+
+      hakkaniyetOrani: normalizeHakkaniyetOrani(form.hakkaniyetOrani),
 
       notes: str(form.notes),
 

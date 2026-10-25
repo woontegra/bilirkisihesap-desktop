@@ -11,6 +11,7 @@ import {
   createFmBackendCrud,
   type FmSaveResult,
 } from "../shared/fmBackendCrud";
+import { normalizeHakkaniyetOrani } from "../shared/hakkaniyetOrani";
 import {
   EXCLUSION_TYPES,
   newLocalId,
@@ -173,6 +174,7 @@ export function mapYeraltiFormFromBackend(
       exclusions: normalizeExclusions(form.exclusions),
       mode270: normalizeMode270(form.mode270),
       mahsup: str(form.mahsuplasmaMiktari ?? form.mahsup),
+      hakkaniyetOrani: normalizeHakkaniyetOrani(form.hakkaniyetOrani),
       notes: str(form.notes ?? form.notlar),
       zamanasimi: normalizeZamanasimi(form.zamanasimi),
       rowOverrides: {},
@@ -209,6 +211,7 @@ export function buildYeraltiSaveData(
     mode270: form.mode270,
     katSayi: form.katsayi,
     mahsuplasmaMiktari: form.mahsup,
+    hakkaniyetOrani: normalizeHakkaniyetOrani(form.hakkaniyetOrani),
     zamanasimi: form.zamanasimi,
     exclusions: form.exclusions,
     rowOverrides: form.rowOverrides,

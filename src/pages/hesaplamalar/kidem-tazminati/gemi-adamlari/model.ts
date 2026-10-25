@@ -5,6 +5,8 @@
  * ekstra hesaplama setleri ayrı API katmanındadır (engine dokunmaz).
  */
 
+import type { EklentiDokumleri } from "../../shared/eklentiDokumu";
+
 export type ExtraItem = {
   id: string;
   name: string;
@@ -30,6 +32,10 @@ export type GemiFormSnapshot = {
   diger: string;
   extras: ExtraItem[];
   notes: string;
+  /** 12 aylık eklenti hesabının gün esası; eski kayıtlarda yoksa 360 */
+  eklentiGunEsasi: 360 | 365;
+  /** Kalem başına uygulanmış 12 aylık eklenti dökümü; eski kayıtlarda yok */
+  eklentiDokumleri?: EklentiDokumleri;
 };
 
 export type GemiResultSummary = {
@@ -76,5 +82,6 @@ export function createEmptyGemiForm(): GemiFormSnapshot {
     diger: "",
     extras: [],
     notes: "",
+    eklentiGunEsasi: 360,
   };
 }

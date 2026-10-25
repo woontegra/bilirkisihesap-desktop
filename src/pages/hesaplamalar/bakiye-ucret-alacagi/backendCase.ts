@@ -10,6 +10,8 @@ import {
   unwrapCalcData,
   type CalcSaveResult,
 } from "../shared/calcBackendCrud";
+import { normalizeEklentiGunEsasi } from "../shared/eklentiGunEsasi";
+import { eklentiDokumleriniFormaYerlestir, normalizeEklentiDokumleri } from "../shared/eklentiDokumu";
 import type { BakiyeForm, BakiyeResults, ExtraItem, SavedCase } from "./model";
 import { createEmptyForm, newLocalId } from "./model";
 import { parseNum } from "./engine";
@@ -87,6 +89,8 @@ export function mapBakiyeFormFromBackend(data: unknown): BakiyeForm | null {
       resignDate: str(form.resignDate ?? form.resign_date) || empty.resignDate,
       brut: str(form.brut ?? form.brutUcret ?? payload.brut_total) || empty.brut,
       extras,
+      eklentiGunEsasi: normalizeEklentiGunEsasi(form.eklentiGunEsasi),
+      eklentiDokumleri: normalizeEklentiDokumleri(form.eklentiDokumleri),
     };
   } catch {
     return null;
@@ -94,11 +98,11 @@ export function mapBakiyeFormFromBackend(data: unknown): BakiyeForm | null {
 }
 
 function buildFormPayload(form: BakiyeForm, monthly: number): Record<string, unknown> {
-  return {
+  return eklentiDokumleriniFormaYerlestir({
     ...form,
     monthly,
     extraItems: form.extras.map((e) => ({ id: e.id, name: e.label, value: e.value })),
-  };
+  });
 }
 
 function monthlyFromForm(form: BakiyeForm): number {

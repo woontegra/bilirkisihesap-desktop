@@ -214,8 +214,8 @@ export function deriveBrutNet(brut: number, exitIso?: string | null): BrutNetRes
   return { brut: round2(brut), damgaOran, damgaVergisi, net };
 }
 
-/** Eklenti hesaplama: 12 aylık toplam / 360 × 30 (V3 ile aynı formül). */
-export function computeEklentiResult(months: string[]): number {
+/** Eklenti hesaplama: 12 aylık toplam / gün esası × 30 — gün esası 360 (varsayılan, V3 ile aynı) veya 365. */
+export function computeEklentiResult(months: string[], gunEsasi: 360 | 365 = 360): number {
   const sum = months.reduce((acc, v) => acc + parseNum(v), 0);
-  return (sum / 360) * 30;
+  return (sum / gunEsasi) * 30;
 }

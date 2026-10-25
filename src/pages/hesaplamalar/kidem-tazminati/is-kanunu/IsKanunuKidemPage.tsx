@@ -25,6 +25,20 @@ import { useToast } from "@/context/ToastContext";
 import { mapIsKanunuFormFromBackend, resolveSavedCaseDisplayName, isKanunuCaseCrud, buildIsKanunuSaveResult, mapIsKanunuRecordToSavedCase, KIDEM_30ISCI_TYPE } from "./backendCase";
 import { listKidemSavedCases } from "../shared/listKidemCases";
 import { formatKidemMoneyFields } from "../shared/formatKidemMoneyFields";
+import { EklentiGunEsasiSecimi } from "../../shared/EklentiGunEsasiSecimi";
+import {
+  normalizeEklentiGunEsasi,
+  VARSAYILAN_EKLENTI_GUN_ESASI,
+  type EklentiGunEsasi,
+} from "../../shared/eklentiGunEsasi";
+import {
+  eklentiDokumleriAnahtari,
+  eklentiDokumleriniBuda,
+  eklentiDokumuYaz,
+  normalizeEklentiDokumleri,
+  type EklentiDokumleri,
+} from "../../shared/eklentiDokumu";
+import { useEklentiPenceresi } from "../../shared/useEklentiPenceresi";
 import { formatIsoDateTR } from "@/utils/dateDisplay";
 import {
   computeEklentiResult,
@@ -52,7 +66,7 @@ import tourStyles from "@/components/guided-tour/GuidedTour.module.css";
 
 const PAGE_TITLE = "Kıdem Tazminatı — İş Kanununa Göre";
 const NOTE_INFO =
-  "Prim, İkramiye, Yol ve Yemek gibi ekli kalemlerin hesaplanmasında son 12 aylık bordroda yer alan tüm tutarlar toplanır, toplam 360'a bölünür ve 30 ile çarpılır. Bu değeri her kalemin yanındaki “Eklenti” düğmesiyle otomatik hesaplayabilirsiniz.";
+  "Prim, İkramiye, Yol ve Yemek gibi ekli kalemlerin hesaplanmasında son 12 aylık bordroda yer alan tüm tutarlar toplanır, toplam 360'a (Eklenti penceresinde 365 gün esası seçilirse 365'e) bölünür ve 30 ile çarpılır. Bu değeri her kalemin yanındaki “Eklenti” düğmesiyle otomatik hesaplayabilirsiniz.";
 
 type EklentiTarget = { kind: "field"; field: "prim" | "ikramiye" | "yol" | "yemek" } | { kind: "extra"; id: string };
 
@@ -72,6 +86,8 @@ function snapshotKey(s: IsKanunuFormSnapshot): string {
     y: s.yol,
     m: s.yemek,
     e: s.extras.map((x) => [x.name, x.value]),
+    g: s.eklentiGunEsasi,
+    d: eklentiDokumleriAnahtari(s.eklentiDokumleri, s.extras),
   });
 }
 
@@ -163,6 +179,8 @@ export default function IsKanunuKidemPage() {
   const [yol, setYol] = useState("");
   const [yemek, setYemek] = useState("");
   const [extras, setExtras] = useState<ExtraItem[]>([]);
+  const [eklentiGunEsasi, setEklentiGunEsasi] = useState<EklentiGunEsasi>(VARSAYILAN_EKLENTI_GUN_ESASI);
+  const [eklentiDokumleri, setEklentiDokumleri] = useState<EklentiDokumleri>({});
 
   /* kayıt state */
   const [currentRecordId, setCurrentRecordId] = useState<string | null>(null);
@@ -175,8 +193,13 @@ export default function IsKanunuKidemPage() {
 
   /* ui state */
   const [removingIds, setRemovingIds] = useState<string[]>([]);
-  const [eklentiFor, setEklentiFor] = useState<EklentiTarget | null>(null);
-  const [eklentiMonths, setEklentiMonths] = useState<Record<string, string[]>>({});
+  const eklenti = useEklentiPenceresi<EklentiTarget>({
+    dokumler: eklentiDokumleri,
+    varsayilanGunEsasi: eklentiGunEsasi,
+    hesapla: computeEklentiResult,
+  });
+  const eklentiFor = eklenti.hedef;
+  const kapatEklenti = eklenti.kapat;
   const [showRecordsModal, setShowRecordsModal] = useState(false);
   const [showCaseSaveModal, setShowCaseSaveModal] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
@@ -221,8 +244,10 @@ export default function IsKanunuKidemPage() {
       yemek,
       extras: extras.map((i) => ({ id: i.id, name: i.name, value: i.value })),
       notes: "",
+      eklentiGunEsasi,
+      eklentiDokumleri: eklentiDokumleriniBuda(eklentiDokumleri, extras),
     }),
-    [iseGirisTarihi, istenCikisTarihi, ciplakBrut, prim, ikramiye, yol, yemek, extras],
+    [iseGirisTarihi, istenCikisTarihi, ciplakBrut, prim, ikramiye, yol, yemek, extras, eklentiGunEsasi, eklentiDokumleri],
   );
 
   const reloadCases = useCallback(async () => {
@@ -329,7 +354,7 @@ export default function IsKanunuKidemPage() {
       else if (showCaseSaveModal) setShowCaseSaveModal(false);
       else if (showPreview) setShowPreview(false);
       else if (showRecordsModal) setShowRecordsModal(false);
-      else if (eklentiFor) setEklentiFor(null);
+      else if (eklentiFor) kapatEklenti();
     };
     document.addEventListener("keydown", onKeyDown);
     return () => {
@@ -339,6 +364,7 @@ export default function IsKanunuKidemPage() {
     };
   }, [
     eklentiFor,
+    kapatEklenti,
     showRecordsModal,
     showCaseSaveModal,
     showPreview,
@@ -364,9 +390,10 @@ export default function IsKanunuKidemPage() {
     setYol("");
     setYemek("");
     setExtras([]);
+    setEklentiGunEsasi(VARSAYILAN_EKLENTI_GUN_ESASI);
+    setEklentiDokumleri({});
     setCurrentRecordId(null);
     setCurrentRecordName(null);
-    setEklentiMonths({});
     setBaseline(snapshotKey(createEmptyForm()));
   }, []);
 
@@ -394,6 +421,8 @@ export default function IsKanunuKidemPage() {
         })),
       });
       const items: ExtraItem[] = formatted.extras ?? [];
+      const gunEsasi = normalizeEklentiGunEsasi(formatted.eklentiGunEsasi);
+      const dokumler = normalizeEklentiDokumleri(formatted.eklentiDokumleri);
       setIseGirisTarihi(String(formatted.iseGirisTarihi ?? ""));
       setIstenCikisTarihi(String(formatted.istenCikisTarihi ?? ""));
       setCiplakBrut(String(formatted.ciplakBrut ?? ""));
@@ -402,6 +431,8 @@ export default function IsKanunuKidemPage() {
       setYol(String(formatted.yol ?? ""));
       setYemek(String(formatted.yemek ?? ""));
       setExtras(items);
+      setEklentiGunEsasi(gunEsasi);
+      setEklentiDokumleri(dokumler);
       setCurrentRecordId(c.id);
       setCurrentRecordName(c.name);
       setBaseline(
@@ -415,6 +446,8 @@ export default function IsKanunuKidemPage() {
           yemek: String(formatted.yemek ?? ""),
           extras: items,
           notes: "",
+          eklentiGunEsasi: gunEsasi,
+          eklentiDokumleri: dokumler,
         }),
       );
       setShowRecordsModal(false);
@@ -438,9 +471,12 @@ export default function IsKanunuKidemPage() {
     setYol(String(form.yol ?? ""));
     setYemek(String(form.yemek ?? ""));
     setExtras(items);
+    const gunEsasi = normalizeEklentiGunEsasi(form.eklentiGunEsasi);
+    const dokumler = normalizeEklentiDokumleri(form.eklentiDokumleri);
+    setEklentiGunEsasi(gunEsasi);
+    setEklentiDokumleri(dokumler);
     setCurrentRecordId(recordId);
     setCurrentRecordName(recordName);
-    setEklentiMonths({});
     setBaseline(
       snapshotKey({
         iseGirisTarihi: String(form.iseGirisTarihi ?? ""),
@@ -452,6 +488,8 @@ export default function IsKanunuKidemPage() {
         yemek: String(form.yemek ?? ""),
         extras: items,
         notes: "",
+        eklentiGunEsasi: gunEsasi,
+        eklentiDokumleri: dokumler,
       }),
     );
     triggerFormSwap();
@@ -630,27 +668,25 @@ export default function IsKanunuKidemPage() {
   };
 
   /* eklenti (12 aylık ortalama) */
-  const openEklenti = (target: EklentiTarget) => {
-    const key = eklentiKey(target);
-    setEklentiMonths((prev) => (prev[key] ? prev : { ...prev, [key]: Array<string>(12).fill("") }));
-    setEklentiFor(target);
-  };
+  const openEklenti = (target: EklentiTarget) => eklenti.ac(target, eklentiKey(target));
 
   const applyEklenti = () => {
-    if (!eklentiFor) return;
-    const key = eklentiKey(eklentiFor);
-    const months = eklentiMonths[key] ?? Array<string>(12).fill("");
-    const value = computeEklentiResult(months) || 0;
+    const taslak = eklenti.taslak;
+    if (!taslak) return;
+    const value = computeEklentiResult(taslak.aylar, taslak.gunEsasi) || 0;
     const formatted = value.toFixed(2).replace(".", ",");
-    if (eklentiFor.kind === "field") {
-      if (eklentiFor.field === "prim") setPrim(formatted);
-      else if (eklentiFor.field === "ikramiye") setIkramiye(formatted);
-      else if (eklentiFor.field === "yol") setYol(formatted);
+    const target = taslak.target;
+    if (target.kind === "field") {
+      if (target.field === "prim") setPrim(formatted);
+      else if (target.field === "ikramiye") setIkramiye(formatted);
+      else if (target.field === "yol") setYol(formatted);
       else setYemek(formatted);
     } else {
-      updateExtra(eklentiFor.id, { value: formatted });
+      updateExtra(target.id, { value: formatted });
     }
-    setEklentiFor(null);
+    setEklentiGunEsasi(taslak.gunEsasi);
+    setEklentiDokumleri((prev) => eklentiDokumuYaz(prev, taslak.key, taslak));
+    eklenti.kapat();
   };
 
   /* kayıt işlemleri — backend saved-cases */
@@ -815,10 +851,6 @@ export default function IsKanunuKidemPage() {
 
     return sections;
   }, [iseGirisTarihi, istenCikisTarihi, ciplakBrut, prim, ikramiye, yol, yemek, extras, result]);
-
-  const eklentiResult = eklentiFor
-    ? computeEklentiResult(eklentiMonths[eklentiKey(eklentiFor)] ?? Array<string>(12).fill(""))
-    : 0;
 
   return (
     <div className={styles.page} aria-busy={caseLoading || undefined}>
@@ -1260,8 +1292,8 @@ export default function IsKanunuKidemPage() {
       ) : null}
 
       {/* ── Eklenti modalı ── */}
-      {eklentiFor ? (
-        <div className={styles.modalOverlay} role="presentation" onClick={() => setEklentiFor(null)}>
+      {eklenti.taslak ? (
+        <div className={styles.modalOverlay} role="presentation" onClick={eklenti.kapat}>
           <div
             className={`${styles.modalCard} ${styles.modalWide}`}
             role="dialog"
@@ -1271,31 +1303,25 @@ export default function IsKanunuKidemPage() {
             <h2 className={styles.modalTitle}>Eklenti hesaplama</h2>
             <p className={styles.modalDesc}>Son 12 aylık bordro tutarlarını girin.</p>
             <div className={styles.monthGrid}>
-              {(eklentiMonths[eklentiKey(eklentiFor)] ?? Array<string>(12).fill("")).map((value, index) => (
+              {eklenti.taslak.aylar.map((value, index) => (
                 <label key={index} className={styles.monthField}>
                   <span>{index + 1}. ay</span>
                   <input
                     inputMode="decimal"
                     value={value}
-                    onChange={(e) => {
-                      const v = sanitizeMoneyTyping(e.target.value);
-                      const key = eklentiKey(eklentiFor);
-                      setEklentiMonths((prev) => ({
-                        ...prev,
-                        [key]: (prev[key] ?? Array<string>(12).fill("")).map((m, i) => (i === index ? v : m)),
-                      }));
-                    }}
+                    onChange={(e) => eklenti.ayDegistir(index, sanitizeMoneyTyping(e.target.value))}
                     placeholder="1.250,00"
                   />
                 </label>
               ))}
             </div>
-            <p className={styles.formulaText}>Formül: (12 aylık toplam / 360) × 30</p>
+            <EklentiGunEsasiSecimi value={eklenti.taslak.gunEsasi} onChange={eklenti.gunEsasiDegistir} />
+            <p className={styles.formulaText}>Formül: (12 aylık toplam / {eklenti.taslak.gunEsasi}) × 30</p>
             <p className={styles.formulaResult}>
-              Sonuç: <strong>{formatMoney(eklentiResult)} ₺</strong>
+              Sonuç: <strong>{formatMoney(eklenti.sonuc)} ₺</strong>
             </p>
             <div className={styles.modalActions}>
-              <Button variant="soft" onClick={() => setEklentiFor(null)}>
+              <Button variant="soft" onClick={eklenti.kapat}>
                 İptal
               </Button>
               <Button variant="primary" onClick={applyEklenti}>

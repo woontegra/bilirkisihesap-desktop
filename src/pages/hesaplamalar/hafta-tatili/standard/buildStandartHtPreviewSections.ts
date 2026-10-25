@@ -6,6 +6,7 @@ import { calculateNetFromBrut, parseSettleAmount } from "../lib/net";
 import type { ExcludedDay } from "../lib/types";
 import type { StandardForm } from "./model";
 import type { StandardResult } from "./model";
+import { hakkaniyetOraniEtiketi } from "../../fazla-mesai/shared/hakkaniyetOrani";
 
 export function buildStandartHtPreviewSections(opts: {
   form: StandardForm;
@@ -101,7 +102,7 @@ export function buildStandartHtPreviewSections(opts: {
     headers: ["Kalem", "Tutar"],
     rows: [
       ["Toplam Brüt Alacak", `${formatMoney(result.totalBrut)} ₺`],
-      ["1/3 Hakkaniyet İndirimi", `−${formatMoney(result.hakkaniyet)} ₺`],
+      [`${hakkaniyetOraniEtiketi(form.hakkaniyetOrani)} Hakkaniyet İndirimi`, `−${formatMoney(result.hakkaniyet)} ₺`],
       ["Mahsuplaşma Tutarı", `−${formatMoney(mahsupNum)} ₺`],
       ["Son Brüt Alacak", `${formatMoney(sonBrut)} ₺`],
       ...equityNetPreviewRows({

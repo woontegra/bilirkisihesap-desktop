@@ -38,6 +38,10 @@ import {
   type LocalExtraSet,
   upsertLocalExtraSet,
 } from "@/lib/localExtraSetsStore";
+import { EklentiGunEsasiSecimi } from "../../shared/EklentiGunEsasiSecimi";
+import type { EklentiGunEsasi } from "../../shared/eklentiGunEsasi";
+import type { EklentiDokumleri, EklentiDokumu } from "../../shared/eklentiDokumu";
+import { useEklentiPenceresi } from "../../shared/useEklentiPenceresi";
 import { computeEklentiResult } from "./core";
 import {
   createIhbarGuidedTour,
@@ -194,6 +198,12 @@ export type IhbarPageViewProps = {
   onAddExtra: () => void;
   onUpdateExtra: (id: string, patch: Partial<ExtraItem>) => void;
   onRemoveExtra: (id: string) => void;
+  /** 12 aylık eklenti hesabının gün esası (form alanı; kayıtla saklanır). */
+  eklentiGunEsasi: EklentiGunEsasi;
+  /** Kalem başına uygulanmış 12 aylık eklenti dökümü (form alanı; kayıtla saklanır). */
+  eklentiDokumleri: EklentiDokumleri | undefined;
+  /** Uygula: kalem tutarı yazıldıktan sonra döküm ve gün esası forma yazılır. */
+  onEklentiDokumUygula: (key: string, dokum: EklentiDokumu) => void;
   /** Ekstra set içe aktarımında sabit ücret + extras’ı tek seferde yazar. */
   onReplaceExtrasAndWage?: (wage: Record<WageFieldKey, string>, extras: ExtraItem[]) => void;
   /** Lokal ekstra set deposu anahtarı (varsayılan: ihbar-tazminati). */
@@ -261,10 +271,6 @@ function eklentiKeyOf(target: EklentiTarget): string {
   return target.kind === "field" ? `field:${target.field}` : `extra:${target.id}`;
 }
 
-function emptyMonths(): string[] {
-  return Array.from({ length: 12 }, () => "");
-}
-
 export function IhbarPageView(props: IhbarPageViewProps) {
   const Icon = props.icon;
   const { success, error: showError, info: toastInfo } = useToast();
@@ -274,8 +280,30 @@ export function IhbarPageView(props: IhbarPageViewProps) {
     () => createIhbarGuidedTour(props.guidedTourId),
     [props.guidedTourId],
   );
-  const [eklentiFor, setEklentiFor] = useState<EklentiTarget | null>(null);
-  const [eklentiMonths, setEklentiMonths] = useState<Record<string, string[]>>({});
+  const eklenti = useEklentiPenceresi<EklentiTarget>({
+    dokumler: props.eklentiDokumleri,
+    varsayilanGunEsasi: props.eklentiGunEsasi,
+    hesapla: computeEklentiResult,
+  });
+  const eklentiFor = eklenti.hedef;
+  const eklentiDialogRef = useRef<HTMLDivElement | null>(null);
+  const eklentiAcik = eklenti.taslak !== null;
+  const eklentiKapat = eklenti.kapat;
+  useEffect(() => {
+    if (!eklentiAcik) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape" || e.defaultPrevented) return;
+      // Yalnızca en üstteki modal kapanır (kılavuz katmanı sayılmaz).
+      const modals = [...document.querySelectorAll('[aria-modal="true"]')].filter(
+        (el) => !el.closest("[data-guided-tour-root]"),
+      );
+      if (modals[modals.length - 1] !== eklentiDialogRef.current) return;
+      e.preventDefault();
+      eklentiKapat();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [eklentiAcik, eklentiKapat]);
   const [extraSaveOpen, setExtraSaveOpen] = useState(false);
   const [extraImportOpen, setExtraImportOpen] = useState(false);
   const [savedExtraSets, setSavedExtraSets] = useState<LocalExtraSet[]>([]);
@@ -351,27 +379,22 @@ export function IhbarPageView(props: IhbarPageViewProps) {
     );
   };
 
-  const openEklenti = (target: EklentiTarget) => {
-    const key = eklentiKeyOf(target);
-    setEklentiMonths((prev) => (prev[key] ? prev : { ...prev, [key]: emptyMonths() }));
-    setEklentiFor(target);
-  };
+  const openEklenti = (target: EklentiTarget) => eklenti.ac(target, eklentiKeyOf(target));
 
   const applyEklenti = () => {
-    if (!eklentiFor) return;
-    const key = eklentiKeyOf(eklentiFor);
-    const months = eklentiMonths[key] ?? emptyMonths();
-    const formatted = formatMoney(computeEklentiResult(months) || 0);
-    if (eklentiFor.kind === "field") {
-      props.onWageChange(eklentiFor.field, formatted);
+    const taslak = eklenti.taslak;
+    if (!taslak) return;
+    const formatted = formatMoney(computeEklentiResult(taslak.aylar, taslak.gunEsasi) || 0);
+    const target = taslak.target;
+    if (target.kind === "field") {
+      props.onWageChange(target.field, formatted);
     } else {
-      props.onUpdateExtra(eklentiFor.id, { value: formatted });
+      props.onUpdateExtra(target.id, { value: formatted });
     }
-    setEklentiFor(null);
+    props.onEklentiDokumUygula(taslak.key, { aylar: taslak.aylar, gunEsasi: taslak.gunEsasi });
+    eklenti.kapat();
   };
 
-  const eklentiKey = eklentiFor ? eklentiKeyOf(eklentiFor) : null;
-  const eklentiPreview = eklentiKey ? computeEklentiResult(eklentiMonths[eklentiKey] ?? emptyMonths()) : 0;
   const eklentiTitle = (() => {
     if (!eklentiFor) return "Eklenti hesaplama";
     if (eklentiFor.kind === "extra") return "Eklenti hesaplama";
@@ -908,41 +931,45 @@ export function IhbarPageView(props: IhbarPageViewProps) {
         onCancel={() => props.setConfirmDeleteId(null)}
       />
 
-      {eklentiFor && eklentiKey ? (
-        <div className={styles.modalOverlay} role="presentation" onClick={() => setEklentiFor(null)}>
+      {eklenti.taslak ? (
+        <div className={styles.modalOverlay} role="presentation" onClick={eklenti.kapat}>
           <div
+            ref={eklentiDialogRef}
             className={`${styles.modalCard} ${styles.modalWide}`}
             role="dialog"
             aria-modal="true"
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className={styles.modalTitle}>{eklentiTitle}</h3>
-            <p className={styles.helper}>Son 12 aylık bordro tutarlarını girin. Formül: (toplam / 360) × 30</p>
+            <p className={styles.helper}>
+              Son 12 aylık bordro tutarlarını girin. Formül: (toplam / {eklenti.taslak.gunEsasi}) × 30
+            </p>
             <div className={styles.monthGrid}>
-              {(eklentiMonths[eklentiKey] ?? emptyMonths()).map((value, index) => (
+              {eklenti.taslak.aylar.map((value, index) => (
                 <label key={index} className={styles.monthField}>
                   <span>{index + 1}. ay</span>
                   <input
                     className={styles.input}
                     inputMode="decimal"
                     value={value}
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      setEklentiMonths((prev) => ({
-                        ...prev,
-                        [eklentiKey]: (prev[eklentiKey] ?? emptyMonths()).map((m, i) => (i === index ? v : m)),
-                      }));
-                    }}
+                    onChange={(e) => eklenti.ayDegistir(index, e.target.value)}
                     placeholder="1.250,00"
                   />
                 </label>
               ))}
             </div>
-            <p className={styles.helper} style={{ marginTop: "0.5rem" }}>
-              Sonuç: <strong>{formatMoney(eklentiPreview)} ₺</strong>
-            </p>
+            <div className={styles.eklentiResultRow}>
+              <p className={styles.helper}>
+                Sonuç: <strong>{formatMoney(eklenti.sonuc)} ₺</strong>
+              </p>
+              <EklentiGunEsasiSecimi
+                className={styles.eklentiGunEsasi}
+                value={eklenti.taslak.gunEsasi}
+                onChange={eklenti.gunEsasiDegistir}
+              />
+            </div>
             <div className={styles.modalActions}>
-              <Button type="button" variant="ghost" size="sm" onClick={() => setEklentiFor(null)}>
+              <Button type="button" variant="ghost" size="sm" onClick={eklenti.kapat}>
                 İptal
               </Button>
               <Button type="button" variant="primary" size="sm" onClick={applyEklenti}>

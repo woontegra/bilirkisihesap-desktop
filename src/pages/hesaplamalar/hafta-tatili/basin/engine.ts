@@ -86,8 +86,8 @@ export function computeBasinHaftaTatili(form: BasinForm): BasinResult {
     year,
     accrualIso,
     net,
-    hakkaniyet: calcHakkaniyet(totalBrut),
-    mahsupSonuc: calcMahsupSonuc(totalBrut, form.settleAmount),
+    hakkaniyet: calcHakkaniyet(totalBrut, form.hakkaniyetOrani),
+    mahsupSonuc: calcMahsupSonuc(totalBrut, form.settleAmount, form.hakkaniyetOrani),
     weekDayMultiplier: mult,
   };
 }

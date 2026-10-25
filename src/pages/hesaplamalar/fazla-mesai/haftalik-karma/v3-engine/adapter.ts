@@ -22,6 +22,7 @@ import {
   toNumericDayGroups,
   validateDateRange,
 } from "../engine";
+import { hesaplaHakkaniyetIndirimi } from "../../shared/hakkaniyetOrani";
 
 export type FmGrossNet = {
   sgk: number;
@@ -224,7 +225,7 @@ export function computeHaftalikKarmaResultV3(form: HaftalikKarmaFormSnapshot): H
   const sgk = fullNet.sgk;
   const issizlik = fullNet.issizlik;
 
-  const hakkaniyetOneri = toplamFm / 3;
+  const hakkaniyetOneri = hesaplaHakkaniyetIndirimi(toplamFm, form.hakkaniyetOrani);
   const mahsupTutari = parseMahsup(form.mahsup);
   const mahsupSonrasiNet = Math.max(0, toplamFm - hakkaniyetOneri - mahsupTutari);
 

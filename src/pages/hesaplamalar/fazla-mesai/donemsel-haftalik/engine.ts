@@ -10,6 +10,7 @@ import {
   apply270RuleFrontend,
   fmHoursAfterYargitay270Simple,
 } from "../shared/mode270Core";
+import { parseDecimalKatsayi } from "../shared/katsayiForm";
 import {
   DAMGA_ORAN,
   FM_DENOMINATOR,
@@ -64,8 +65,7 @@ export function formatMoney(value: number): string {
 export { sanitizeMoneyTyping } from "@/utils/moneyInput";
 
 export function parseKatsayi(value: string): number {
-  const n = parseMoneyInput(value);
-  return n > 0 ? n : 1;
+  return parseDecimalKatsayi(value);
 }
 
 export function isValidIsoDate(iso: string): boolean {

@@ -78,6 +78,8 @@ import { insertExclusionsPreviewSection } from "../shared/exclusionsPreview";
 import { formatIsoDateRangeTR, formatIsoDateTR } from "@/utils/dateDisplay";
 import { NotlarAccordion } from "../standart/NotlarAccordion";
 import styles from "./Vardiya24FmPage.module.css";
+import { hakkaniyetOraniEtiketi } from "../shared/hakkaniyetOrani";
+import { HakkaniyetOraniSecimi } from "../shared/HakkaniyetOraniSecimi";
 
 const PAGE_TITLE = "24 Saat Çalışma Hesaplama";
 
@@ -630,7 +632,7 @@ export default function Vardiya24FmPage() {
         headers: ["Kalem", "Tutar"],
         rows: [
           ["Toplam Brüt Alacak", money(result.toplamFm)],
-          ["1/3 Hakkaniyet İndirimi", `-${money(result.hakkaniyetIndirimi)}`],
+          [`${hakkaniyetOraniEtiketi(form.hakkaniyetOrani)} Hakkaniyet İndirimi`, `-${money(result.hakkaniyetIndirimi)}`],
           ["Mahsuplaşma Tutarı", `-${money(result.mahsupTutari)}`],
           ["Son Brüt Alacak", money(result.sonNet)],
           ...equityNetPreviewRows({
@@ -646,7 +648,7 @@ export default function Vardiya24FmPage() {
       ],
       form.exclusions,
     );
-  }, [form.iseGiris, form.istenCikis, displayRows, result, equityNet]);
+  }, [form.iseGiris, form.istenCikis, form.hakkaniyetOrani, displayRows, result, equityNet]);
 
   return (
     <div className={`${styles.page} ${formSwap ? styles.formSwap : ""}`} data-page="fazla-mesai-vardiya-24">
@@ -889,7 +891,7 @@ export default function Vardiya24FmPage() {
       <section className={`${styles.card} ${styles.hakkaniyetCard}`} style={{ animationDelay: "220ms" }}>
         <h2 className={styles.cardTitle}>Hakkaniyet indirimi / mahsuplaşma</h2>
         <p className={styles.panelHint}>
-          1/3 hakkaniyet indirimi ve mahsuplaşma brütten düşülür. Kalan son brüt, bu sayfanın brütten nete
+          {hakkaniyetOraniEtiketi(form.hakkaniyetOrani)} hakkaniyet indirimi ve mahsuplaşma brütten düşülür. Kalan son brüt, bu sayfanın brütten nete
           kesintileriyle nete çevrilir.
         </p>
         <div className={styles.totalsList}>
@@ -898,7 +900,7 @@ export default function Vardiya24FmPage() {
             <FlashValue value={formatMoney(result.toplamFm)} />
           </div>
           <div className={`${styles.totalRow} ${styles.deduct}`}>
-            <span>1/3 hakkaniyet indirimi</span>
+            <HakkaniyetOraniSecimi value={form.hakkaniyetOrani} onChange={(v) => setField("hakkaniyetOrani", v)} metin="hakkaniyet indirimi" />
             <span>-{formatMoney(result.hakkaniyetIndirimi)}</span>
           </div>
           <div className={`${styles.totalRow} ${styles.deduct}`}>
@@ -939,7 +941,7 @@ export default function Vardiya24FmPage() {
       </section>
 
       <section className={styles.card} style={{ animationDelay: "250ms" }}>
-        <NotlarAccordion />
+        <NotlarAccordion hakkaniyetOrani={form.hakkaniyetOrani} />
       </section>
 
       <div

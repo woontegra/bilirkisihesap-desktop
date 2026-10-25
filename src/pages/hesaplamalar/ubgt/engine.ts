@@ -18,6 +18,7 @@ import {
 } from "./filterExcludedUbgtHolidays";
 import { settleAmountFromMahsupMatrix } from "./mahsuplasama";
 import { sumMahsuplasamaMatrix } from "./mahsuplasama";
+import { hesaplaHakkaniyetIndirimi, type HakkaniyetOrani } from "../fazla-mesai/shared/hakkaniyetOrani";
 
 export { buildTanikRanges, collectDavaciHolidayIds } from "./buildTanikRanges";
 export { sumMahsuplasamaMatrix, settleAmountFromMahsupMatrix };
@@ -81,8 +82,8 @@ export function formatDateTRLong(iso: string): string {
 }
 
 /** V3 UbgtNetConversion: hakkaniyet = brut / 3 (NO round2 on hakkaniyet itself). */
-export function calcHakkaniyet(brut: number): number {
-  return (brut || 0) / 3;
+export function calcHakkaniyet(brut: number, hakkaniyetOrani?: HakkaniyetOrani): number {
+  return hesaplaHakkaniyetIndirimi(brut || 0, hakkaniyetOrani);
 }
 
 /** V3 Standart REPORT mahsup sonucu: max(0, net − hakkaniyet) — settle NOT subtracted. */

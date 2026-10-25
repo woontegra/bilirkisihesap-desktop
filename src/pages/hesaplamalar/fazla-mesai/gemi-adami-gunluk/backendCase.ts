@@ -8,6 +8,7 @@ import {
   createFmBackendCrud,
   type FmSaveResult,
 } from "../shared/fmBackendCrud";
+import { normalizeHakkaniyetOrani } from "../shared/hakkaniyetOrani";
 import {
   EXCLUSION_TYPES,
   createEmptyForm,
@@ -233,6 +234,7 @@ export function mapGemiGunlukFormFromBackend(
       mode270: normalizeMode270(form.mode270),
       zamanasimi: normalizeZamanasimi(form.zamanasimi),
       mahsup: str(form.mahsup ?? form.mahsuplasmaMiktari),
+      hakkaniyetOrani: normalizeHakkaniyetOrani(form.hakkaniyetOrani),
       notes: str(form.notes),
       rowOverrides: mapRowOverrides(form.rowOverrides ?? payload.rowOverrides),
       manualRows: mapManualRows(form.manualRows),
@@ -271,6 +273,7 @@ export function buildGemiGunlukSaveData(
     mode270: form.mode270,
     katSayi: form.katSayi,
     mahsuplasmaMiktari: form.mahsup,
+    hakkaniyetOrani: normalizeHakkaniyetOrani(form.hakkaniyetOrani),
     zamanasimi: form.zamanasimi,
     exclusions: form.exclusions,
     rowOverrides: form.rowOverrides,

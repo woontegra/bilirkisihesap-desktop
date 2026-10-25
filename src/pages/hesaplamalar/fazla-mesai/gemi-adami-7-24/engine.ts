@@ -15,6 +15,8 @@ import type {
 } from "./model";
 import { newLocalId } from "./model";
 import { runGemi724V3Pipeline } from "./v3-engine/pipeline";
+import { parseDecimalKatsayi } from "../shared/katsayiForm";
+import { hesaplaHakkaniyetIndirimi, type HakkaniyetOrani } from "../shared/hakkaniyetOrani";
 
 /* ── Sabitler ── */
 export const WEEKLY_LIMIT = 48;
@@ -52,8 +54,7 @@ export function parseMoneyInput(value: string): number {
 }
 
 export function parseKatsayi(value: string): number {
-  const n = parseMoneyInput(value);
-  return n > 0 ? n : 1;
+  return parseDecimalKatsayi(value);
 }
 
 export { sanitizeMoneyTyping } from "@/utils/moneyInput";
@@ -363,6 +364,7 @@ export function computeTotalsFromRows(
   rows: { fm: number }[],
   exitYear: number,
   mahsupInput: string,
+  hakkaniyetOrani?: HakkaniyetOrani,
 ): Pick<
   Gemi724Result,
   | "totalFm"
@@ -384,7 +386,7 @@ export function computeTotalsFromRows(
   const gelirVergisi = fullNet.gelirVergisi;
   const damgaVergisi = fullNet.damgaVergisi;
   const netYillik = fullNet.net;
-  const hakkaniyetIndirimi = round2(totalFm / 3);
+  const hakkaniyetIndirimi = round2(hesaplaHakkaniyetIndirimi(totalFm, hakkaniyetOrani));
   const mahsupTutari = parseMoneyInput(mahsupInput);
   const sonNet = Math.max(0, round2(totalFm - hakkaniyetIndirimi - mahsupTutari));
   return {
@@ -428,7 +430,7 @@ export function computeGemi724Result(form: Gemi724FormSnapshot): Gemi724Result {
   });
 
   const exitYear = fmTaxYear(form.istenCikis);
-  const totals = computeTotalsFromRows(displayRows, exitYear, form.mahsup);
+  const totals = computeTotalsFromRows(displayRows, exitYear, form.mahsup, form.hakkaniyetOrani);
 
   return { fixedFmHoursWeekly: FIXED_FM_HOURS, rows: displayRows, ...totals };
 }

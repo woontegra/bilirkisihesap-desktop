@@ -29,6 +29,14 @@ import { useToast } from "@/context/ToastContext";
 import { mapBasinFormFromBackend, resolveSavedCaseDisplayName, basinCaseCrud, buildBasinSaveResult, mapBasinRecordToSavedCase, KIDEM_BASIN_TYPE } from "./backendCase";
 import { listKidemSavedCases } from "../shared/listKidemCases";
 import { formatKidemMoneyFields } from "../shared/formatKidemMoneyFields";
+import { EklentiGunEsasiSecimi } from "../../shared/EklentiGunEsasiSecimi";
+import { normalizeEklentiGunEsasi } from "../../shared/eklentiGunEsasi";
+import {
+  eklentiDokumleriAnahtari,
+  eklentiDokumuYaz,
+  normalizeEklentiDokumleri,
+} from "../../shared/eklentiDokumu";
+import { useEklentiPenceresi } from "../../shared/useEklentiPenceresi";
 import { formatIsoDateTR } from "@/utils/dateDisplay";
 import {
   adjustedTenure,
@@ -162,8 +170,13 @@ export default function BasinKidemPage() {
   const backendLoadedCaseIdRef = useRef<string | null>(null);
 
   const [removingIds, setRemovingIds] = useState<string[]>([]);
-  const [eklentiFor, setEklentiFor] = useState<EklentiTarget | null>(null);
-  const [eklentiMonths, setEklentiMonths] = useState<Record<string, string[]>>({});
+  const eklenti = useEklentiPenceresi<EklentiTarget>({
+    dokumler: form.eklentiDokumleri,
+    varsayilanGunEsasi: form.eklentiGunEsasi,
+    hesapla: computeEklentiResult,
+  });
+  const eklentiFor = eklenti.hedef;
+  const kapatEklenti = eklenti.kapat;
   const [showRecordsModal, setShowRecordsModal] = useState(false);
   const [showCaseSaveModal, setShowCaseSaveModal] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
@@ -201,6 +214,7 @@ export default function BasinKidemPage() {
     JSON.stringify({
       ...s,
       extras: s.extras.map((i) => [i.name, i.value]),
+      eklentiDokumleri: eklentiDokumleriAnahtari(s.eklentiDokumleri, s.extras),
     });
 
   const reloadCases = useCallback(async () => {
@@ -308,7 +322,7 @@ export default function BasinKidemPage() {
       else if (showPreview) setShowPreview(false);
       else if (showRecordsModal) setShowRecordsModal(false);
       else if (showCaseSaveModal) setShowCaseSaveModal(false);
-      else if (eklentiFor) setEklentiFor(null);
+      else if (eklentiFor) kapatEklenti();
     };
     document.addEventListener("keydown", onKeyDown);
     return () => {
@@ -318,6 +332,7 @@ export default function BasinKidemPage() {
     };
   }, [
     eklentiFor,
+    kapatEklenti,
     showRecordsModal,
     showCaseSaveModal,
     showPreview,
@@ -338,7 +353,6 @@ export default function BasinKidemPage() {
     setForm(emptyForm());
     setCurrentRecordId(null);
     setCurrentRecordName(null);
-    setEklentiMonths({});
     setBaseline(snapshotKey(emptyForm()));
   }, []);
 
@@ -361,6 +375,8 @@ export default function BasinKidemPage() {
         ...emptyForm(),
         ...c.form,
         extras: (c.form.extras ?? []).map((i) => ({ id: i.id || newLocalId(), name: i.name, value: i.value })),
+        eklentiGunEsasi: normalizeEklentiGunEsasi(c.form.eklentiGunEsasi),
+        eklentiDokumleri: normalizeEklentiDokumleri(c.form.eklentiDokumleri),
       });
       setForm(nextForm);
       setCurrentRecordId(c.id);
@@ -377,7 +393,6 @@ export default function BasinKidemPage() {
     setForm(nextForm);
     setCurrentRecordId(recordId);
     setCurrentRecordName(recordName);
-    setEklentiMonths({});
     setBaseline(snapshotKey(nextForm));
     triggerFormSwap();
   }, []);
@@ -559,23 +574,24 @@ export default function BasinKidemPage() {
   };
 
   /* ── Eklenti (12 aylık) ── */
-  const openEklenti = (target: EklentiTarget) => {
-    const key = eklentiKey(target);
-    setEklentiMonths((prev) => (prev[key] ? prev : { ...prev, [key]: Array<string>(12).fill("") }));
-    setEklentiFor(target);
-  };
+  const openEklenti = (target: EklentiTarget) => eklenti.ac(target, eklentiKey(target));
 
   const applyEklenti = () => {
-    if (!eklentiFor) return;
-    const key = eklentiKey(eklentiFor);
-    const months = eklentiMonths[key] ?? Array<string>(12).fill("");
-    const formatted = formatEklentiValue(computeEklentiResult(months) || 0);
-    if (eklentiFor.kind === "field") {
-      updateFixedExtra(eklentiFor.field, formatted);
+    const taslak = eklenti.taslak;
+    if (!taslak) return;
+    const formatted = formatEklentiValue(computeEklentiResult(taslak.aylar, taslak.gunEsasi) || 0);
+    const target = taslak.target;
+    if (target.kind === "field") {
+      updateFixedExtra(target.field, formatted);
     } else {
-      updateExtra(eklentiFor.id, { value: formatted });
+      updateExtra(target.id, { value: formatted });
     }
-    setEklentiFor(null);
+    setForm((p) => ({
+      ...p,
+      eklentiGunEsasi: taslak.gunEsasi,
+      eklentiDokumleri: eklentiDokumuYaz(p.eklentiDokumleri, taslak.key, taslak),
+    }));
+    eklenti.kapat();
   };
 
   /* ── Kayıt işlemleri — backend saved-cases ── */
@@ -730,10 +746,6 @@ export default function BasinKidemPage() {
 
     return sections;
   }, [form, kidemSuresi, calismaSuresi, toplamBrutUcret, hakYok, hesaplanacak, brutKidem, brutNet]);
-
-  const eklentiResult = eklentiFor
-    ? computeEklentiResult(eklentiMonths[eklentiKey(eklentiFor)] ?? Array<string>(12).fill(""))
-    : 0;
 
   const fixedRows: { field: FixedExtraField; label: string; value: string }[] = [
     { field: "prim", label: "Prim", value: form.prim },
@@ -1226,8 +1238,8 @@ export default function BasinKidemPage() {
       ) : null}
 
       {/* ── Eklenti modalı ── */}
-      {eklentiFor ? (
-        <div className={styles.modalOverlay} role="presentation" onClick={() => setEklentiFor(null)}>
+      {eklenti.taslak ? (
+        <div className={styles.modalOverlay} role="presentation" onClick={eklenti.kapat}>
           <div
             className={`${styles.modalCard} ${styles.modalWide}`}
             role="dialog"
@@ -1237,31 +1249,25 @@ export default function BasinKidemPage() {
             <h2 className={styles.modalTitle}>Eklenti Hesaplama</h2>
             <p className={styles.modalDesc}>Son 12 aylık bordro tutarlarını girin.</p>
             <div className={styles.monthGrid}>
-              {(eklentiMonths[eklentiKey(eklentiFor)] ?? Array<string>(12).fill("")).map((value, index) => (
+              {eklenti.taslak.aylar.map((value, index) => (
                 <label key={index} className={styles.monthField}>
                   <span>{index + 1}. ay</span>
                   <input
                     inputMode="decimal"
                     value={value}
-                    onChange={(e) => {
-                      const v = sanitizeMoneyTyping(e.target.value);
-                      const key = eklentiKey(eklentiFor);
-                      setEklentiMonths((prev) => ({
-                        ...prev,
-                        [key]: (prev[key] ?? Array<string>(12).fill("")).map((m, i) => (i === index ? v : m)),
-                      }));
-                    }}
+                    onChange={(e) => eklenti.ayDegistir(index, sanitizeMoneyTyping(e.target.value))}
                     placeholder="1.250,00"
                   />
                 </label>
               ))}
             </div>
-            <p className={styles.formulaText}>Formül: (12 aylık toplam / 360) × 30</p>
+            <EklentiGunEsasiSecimi value={eklenti.taslak.gunEsasi} onChange={eklenti.gunEsasiDegistir} />
+            <p className={styles.formulaText}>Formül: (12 aylık toplam / {eklenti.taslak.gunEsasi}) × 30</p>
             <p className={styles.formulaResult}>
-              Sonuç: <strong>{fmtCurrency(eklentiResult)} ₺</strong>
+              Sonuç: <strong>{fmtCurrency(eklenti.sonuc)} ₺</strong>
             </p>
             <div className={styles.modalActions}>
-              <Button variant="soft" onClick={() => setEklentiFor(null)}>
+              <Button variant="soft" onClick={eklenti.kapat}>
                 İptal
               </Button>
               <Button variant="primary" onClick={applyEklenti}>

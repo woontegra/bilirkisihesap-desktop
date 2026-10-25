@@ -17,6 +17,7 @@ import type { FazlaMesaiRowBase } from "./lib/fazlaMesaiShared";
 import { calculateIncomeTaxWithBrackets } from "./lib/incomeTaxCore";
 import { runTanikliFmV3Pipeline } from "./pipeline";
 import { parseKatsayi, validateDateRange } from "../engine";
+import { hesaplaHakkaniyetIndirimi } from "../../shared/hakkaniyetOrani";
 
 export type FmGrossNet = {
   sgk: number;
@@ -210,7 +211,7 @@ export function computeTanikliFmResultV3(form: TanikliFormSnapshot): TanikliResu
   const sgk = fullNet.sgk;
   const issizlik = fullNet.issizlik;
 
-  const hakkaniyetOneri = toplamFm / 3;
+  const hakkaniyetOneri = hesaplaHakkaniyetIndirimi(toplamFm, form.hakkaniyetOrani);
   const mahsupTutari = parseMahsup(form.mahsup);
   const mahsupSonrasiNet = Math.max(0, toplamFm - hakkaniyetOneri - mahsupTutari);
 

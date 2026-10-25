@@ -78,6 +78,8 @@ import { insertExclusionsPreviewSection } from "../shared/exclusionsPreview";
 import { NotlarAccordion } from "../standart/NotlarAccordion";
 import { formatIsoDateRangeTR, formatIsoDateTR } from "@/utils/dateDisplay";
 import styles from "./TanikliStandartFmPage.module.css";
+import { hakkaniyetOraniEtiketi } from "../shared/hakkaniyetOrani";
+import { HakkaniyetOraniSecimi } from "../shared/HakkaniyetOraniSecimi";
 
 const PAGE_TITLE = "Tanıklı Standart Fazla Mesai Hesaplama";
 const WEEKDAY_LABELS = ["Pazar", "Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi"];
@@ -655,7 +657,7 @@ export default function TanikliStandartFmPage() {
       headers: ["Kalem", "Tutar"],
       rows: [
         ["Toplam Brüt Alacak", money(result.toplamFm)],
-        ["1/3 Hakkaniyet İndirimi", `-${money(result.hakkaniyetOneri)}`],
+        [`${hakkaniyetOraniEtiketi(form.hakkaniyetOrani)} Hakkaniyet İndirimi`, `-${money(result.hakkaniyetOneri)}`],
         ["Mahsuplaşma Tutarı", `-${money(result.mahsupTutari)}`],
         ["Son Brüt Alacak", money(result.mahsupSonrasiNet)],
         ...equityNetPreviewRows({
@@ -1112,7 +1114,7 @@ export default function TanikliStandartFmPage() {
               <span>{formatMoney(result.toplamFm)} ₺</span>
             </div>
             <div className={styles.line}>
-              <span>1/3 Hakkaniyet İndirimi</span>
+              <HakkaniyetOraniSecimi value={form.hakkaniyetOrani} onChange={(v) => setField("hakkaniyetOrani", v)} />
               <span className={styles.deduction}>-{formatMoney(result.hakkaniyetOneri)} ₺</span>
             </div>
             <div className={`${styles.line} ${styles.mahsupLine}`}>
@@ -1158,7 +1160,7 @@ export default function TanikliStandartFmPage() {
         </article>
 
         <section className={styles.card} style={{ animationDelay: "220ms" }}>
-          <NotlarAccordion />
+          <NotlarAccordion hakkaniyetOrani={form.hakkaniyetOrani} />
         </section>
       </div>
 

@@ -82,6 +82,8 @@ import { ZamanasimiPickerModal } from "./ZamanasimiPickerModal";
 import { ZamanasimiCetvelBanner } from "../shared/ZamanasimiCetvelBanner";
 import { formatIsoDateRangeTR, formatIsoDateTR } from "@/utils/dateDisplay";
 import styles from "./DonemselFmPage.module.css";
+import { hakkaniyetOraniEtiketi } from "../shared/hakkaniyetOrani";
+import { HakkaniyetOraniSecimi } from "../shared/HakkaniyetOraniSecimi";
 
 const PAGE_TITLE = "Dönemsel Fazla Mesai Hesaplama";
 
@@ -784,7 +786,7 @@ export default function DonemselFmPage() {
         headers: ["Kalem", "Tutar"],
         rows: [
           ["Toplam Brüt Alacak", money(result.toplamFm)],
-          ["1/3 Hakkaniyet İndirimi", `-${money(result.hakkaniyetOneri)}`],
+          [`${hakkaniyetOraniEtiketi(form.hakkaniyetOrani)} Hakkaniyet İndirimi`, `-${money(result.hakkaniyetOneri)}`],
           ["Mahsuplaşma Tutarı", `-${money(result.mahsupTutari)}`],
           ["Son Brüt Alacak", money(result.mahsupSonrasiNet)],
           ...equityNetPreviewRows({
@@ -1135,7 +1137,7 @@ export default function DonemselFmPage() {
               <span>{formatMoney(result.toplamFm)} ₺</span>
             </div>
             <div>
-              <span>1/3 Hakkaniyet İndirimi</span>
+              <HakkaniyetOraniSecimi value={form.hakkaniyetOrani} onChange={(v) => setField("hakkaniyetOrani", v)} />
               <span>−{formatMoney(result.hakkaniyetOneri)} ₺</span>
             </div>
             <div>

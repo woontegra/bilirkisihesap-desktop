@@ -25,6 +25,8 @@ import type {
 } from "./model";
 import { newLocalId } from "./model";
 import { buildMergedWitnessSegments } from "./witnessSegments";
+import { hesaplaHakkaniyetIndirimi, type HakkaniyetOrani } from "../shared/hakkaniyetOrani";
+import { resolveStableInsertAfter, resolveStableRowOverrides, withStableRowIds } from "../shared/stableRowIds";
 
 /* ── yardımcılar ── */
 
@@ -477,6 +479,7 @@ export function computeTotalsFromRows(
   rows: { fm: number }[],
   exitYear: number,
   mahsupInput: string,
+  hakkaniyetOrani?: HakkaniyetOrani,
 ): Omit<Vardiya48Result, "rows" | "warnings"> {
   const toplamFm = rows.reduce((sum, r) => sum + (Number(r.fm) || 0), 0);
   const fullNet = netFromGrossFm(toplamFm, exitYear);
@@ -485,7 +488,7 @@ export function computeTotalsFromRows(
   const gelirVergisi = fullNet.gelirVergisi;
   const damgaVergisi = fullNet.damgaVergisi;
   const netYillik = fullNet.net;
-  const hakkaniyetIndirimi = toplamFm / 3;
+  const hakkaniyetIndirimi = hesaplaHakkaniyetIndirimi(toplamFm, hakkaniyetOrani);
   const mahsupTutari = parseMoneyInput(mahsupInput);
   const sonNet = Math.max(0, toplamFm - hakkaniyetIndirimi - mahsupTutari);
   return {
@@ -613,10 +616,16 @@ export function computeVardiya48Result(form: Vardiya48FormSnapshot): Vardiya48Re
 
   // mode270: V3 Vardiya48Page her zaman "none" kaydeder ve uygulamıyor — motor parity.
 
-  const withOverrides = applyRowOverrides(apiRows, form.rowOverrides, form.manualRows, katSayi);
+  const stable = withStableRowIds(apiRows, "v48", (r) => `${r.weekTypeLabel || ""}-${Number(r.fmHours) || 0}`);
+  const withOverrides = applyRowOverrides(
+    stable.rows,
+    resolveStableRowOverrides(form.rowOverrides, stable.legacyIds),
+    resolveStableInsertAfter(form.manualRows, stable.legacyIds),
+    katSayi,
+  );
 
   const exitYear = vardiya48TaxYear(form.istenCikis);
-  const totals = computeTotalsFromRows(withOverrides, exitYear, form.mahsuplasmaMiktari);
+  const totals = computeTotalsFromRows(withOverrides, exitYear, form.mahsuplasmaMiktari, form.hakkaniyetOrani);
 
   return {
     rows: withOverrides,

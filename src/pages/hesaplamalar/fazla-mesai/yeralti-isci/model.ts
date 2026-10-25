@@ -5,6 +5,8 @@
  * İşçileri Fazla Mesai" sayfasıyla eşdeğerdir; tasarım V3.5 desenidir.
  */
 
+import { VARSAYILAN_HAKKANIYET_ORANI, type HakkaniyetOrani } from "../shared/hakkaniyetOrani";
+
 export type SevenDayMode = "tatilli" | "tatilsiz";
 
 export type Mode270 = "none" | "simple" | "detailed";
@@ -100,6 +102,7 @@ export type YeraltiFormSnapshot = {
   exclusions: ExclusionItem[];
   mode270: Mode270;
   mahsup: string;
+  hakkaniyetOrani: HakkaniyetOrani;
   notes: string;
   zamanasimi: ZamanasimiInfo;
   /** Cetvel satırlarında hafta/ücret/FM saati/tarih alanlarına yapılan manuel düzeltmeler (satır id → düzeltme). */
@@ -127,7 +130,7 @@ export type YeraltiResult = {
   damgaVergisi: number;
   /** Brütten nete: totalFm − sgk − issizlik − gelirVergisi − damgaVergisi. */
   netYillik: number;
-  /** Hakkaniyet indirimi: totalFm / 3 (BRÜT üzerinden). */
+  /** Hakkaniyet indirimi: totalFm × seçilen oran (varsayılan 1/3; BRÜT üzerinden). */
   hakkaniyetIndirimi: number;
   mahsupTutari: number;
   /** Son net alacak: max(0, totalFm − hakkaniyet − mahsup). */
@@ -164,6 +167,7 @@ export function createEmptyForm(): YeraltiFormSnapshot {
     exclusions: [],
     mode270: "none",
     mahsup: "",
+    hakkaniyetOrani: VARSAYILAN_HAKKANIYET_ORANI,
     notes: "",
     zamanasimi: null,
     rowOverrides: {},
